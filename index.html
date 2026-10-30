@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>โตออม</title>
+<meta name="description" content="สมุดปลดหนี้ ทันเกษียณ">
+<meta name="apple-mobile-web-app-title" content="โตออม">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0B4A37">
+<link id="touchIcon" rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" type="image/png" href="favicon.png">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chonburi&family=Sarabun:wght@400;600;700&display=swap">
+<style>
+  :root{--cover:#0B4A37;--cover2:#06392A;--on:#EAF5EF;--muted:#A7CBB9;--gold:#F2C45C}
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{margin:0;font:16px/1.6 "Sarabun",system-ui,sans-serif;color:var(--on);
+    background:radial-gradient(900px 500px at 85% -10%,rgba(255,255,255,.08),transparent 60%),linear-gradient(160deg,#14805C,var(--cover2));
+    min-height:100%;display:flex;align-items:center;justify-content:center;
+    padding:max(24px,env(safe-area-inset-top)) max(20px,env(safe-area-inset-right)) max(24px,env(safe-area-inset-bottom)) max(20px,env(safe-area-inset-left))}
+  main{width:min(420px,100%);display:flex;flex-direction:column;align-items:center;gap:18px;text-align:center}
+  .icon{width:116px;height:116px;border-radius:27px;box-shadow:0 18px 40px -16px rgba(0,0,0,.6)}
+  h1{margin:0;font:400 40px/1.2 "Chonburi","Sarabun",serif;letter-spacing:.01em}
+  .sub{margin:-8px 0 0;color:var(--muted)}
+  .btn{display:inline-flex;align-items:center;justify-content:center;min-height:50px;padding:12px 26px;border-radius:14px;border:0;background:var(--gold);color:#3b2a00;font:700 17px "Sarabun",system-ui,sans-serif;text-decoration:none;cursor:pointer}
+  .btn:focus-visible{outline:3px solid #fff;outline-offset:3px}
+  .loading{color:var(--muted);font-size:15px}
+  .setup{width:100%;display:flex;flex-direction:column;gap:14px;text-align:left;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:18px;padding:18px}
+  .setup h2{margin:0;font-size:18px}
+  .pick{display:flex;gap:14px;justify-content:center}
+  .pick button{border:0;padding:0;background:none;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:6px;color:var(--muted);font:600 13px "Sarabun",system-ui}
+  .pick img{width:64px;height:64px;border-radius:15px;outline:3px solid transparent;outline-offset:3px}
+  .pick button[aria-pressed="true"] img{outline-color:var(--gold)}
+  .pick button[aria-pressed="true"]{color:var(--on)}
+  ol{margin:0;padding-left:1.3em;display:flex;flex-direction:column;gap:6px}
+  ol b{color:#fff}
+  .note{font-size:14px;color:var(--muted)}
+  [hidden]{display:none!important}
+</style>
+</head>
+<body>
+<main>
+  <img class="icon" id="bigIcon" src="icons/jade-512.png" alt="">
+  <h1>โตออม</h1>
+  <p class="sub">สมุดปลดหนี้ ทันเกษียณ</p>
+
+  <div id="go">
+    <p class="loading">กำลังเปิดสมุด…</p>
+    <a class="btn" id="openBtn" href="#">เปิดโตออม</a>
+  </div>
+
+  <section class="setup" id="setup" hidden>
+    <h2>ติดตั้งไอคอนบนหน้าจอโฮม</h2>
+    <div class="pick" role="group" aria-label="เลือกไอคอน">
+      <button type="button" data-icon="jade" aria-pressed="true"><img src="icons/jade-180.png" alt="">หยก</button>
+      <button type="button" data-icon="gold" aria-pressed="false"><img src="icons/gold-180.png" alt="">ทอง</button>
+      <button type="button" data-icon="night" aria-pressed="false"><img src="icons/night-180.png" alt="">กลางคืน</button>
+    </div>
+    <ol>
+      <li>เลือกไอคอนที่ชอบด้านบน</li>
+      <li>แตะปุ่ม <b>แชร์</b> ของ Safari (สี่เหลี่ยมมีลูกศรชี้ขึ้น)</li>
+      <li>เลือก <b>เพิ่มไปยังหน้าจอโฮม</b></li>
+      <li><b>ปิด</b> สวิตช์ "เปิดเป็นแอปหน้าเว็บ" แล้วกด <b>เพิ่ม</b></li>
+    </ol>
+    <p class="note">ปิดสวิตช์ไว้ เพื่อให้เปิดใน Safari ที่ล็อกอิน Claude อยู่แล้ว ข้อมูลหนี้ ประวัติ และโค้ช AI ใช้ได้ครบ ถ้าเปิดสวิตช์ จะได้หน้าจอเต็มแต่อาจต้องล็อกอิน Claude ใหม่ในไอคอนนั้น</p>
+  </section>
+</main>
+<script>
+(function(){
+  var APP='https://claude.ai/artifact/XSSdBvJTo651SxgK6utSf6';
+  var setup=location.hash==='#setup';
+  document.getElementById('openBtn').href=APP;
+  if(setup){
+    // remove the hash so the home-screen icon saves the plain address (which opens the app)
+    try{history.replaceState(null,'',location.pathname+location.search)}catch(e){}
+    document.getElementById('go').hidden=true;
+    document.getElementById('setup').hidden=false;
+    var link=document.getElementById('touchIcon'),big=document.getElementById('bigIcon');
+    var btns=document.querySelectorAll('[data-icon]');
+    for(var i=0;i<btns.length;i++){btns[i].addEventListener('click',function(){
+      var k=this.getAttribute('data-icon');
+      link.setAttribute('href','icons/'+k+'-180.png');big.src='icons/'+k+'-512.png';
+      for(var j=0;j<btns.length;j++)btns[j].setAttribute('aria-pressed',String(btns[j]===this));
+    })}
+    return;
+  }
+  setTimeout(function(){location.replace(APP)},250);
+})();
+</script>
+</body>
+</html>
