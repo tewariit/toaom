@@ -379,14 +379,17 @@ function dailyPool(s){
   if(!s||!Array.isArray(s.living))return 0;
   return s.living.filter(x=>DAILY.includes(x.cat)).reduce((a,x)=>a+monthlyOf(x),0);
 }
+function burnOf(k,l){if(!l||!(l.done==="1"||l.done==="2"))return 0;const w=H.weights.filter(r=>r[0]<=k).sort((a,b)=>a[0]<b[0]?-1:1);
+  const kg=w.length?+w[w.length-1][1]:(H.weights[0]?+H.weights[0][1]:85),km=parseFloat(l.km),mn=parseFloat(l.min);
+  let v=0;if(km>0)v=kg*km;else if(mn>0)v=6.5*kg*mn/60;return Math.round(v/10)*10}
 function summary(){
   const today=TL.date;
   const t=iso(today),s=H.aom.settings||{};
   const W=H.weights.slice().sort((a,b)=>a[0]<b[0]?-1:1);
   const wNow=W.length?+W[W.length-1][1]:null,wStart=W.length?+W[0][1]:null;
   const mon=addD(today,-((today.getDay()+6)%7));
-  let wk={n:0,km:0,min:0};
-  for(let i=0;i<7;i++){const r=H.runs[iso(addD(mon,i))];if(r&&(r.done==="1"||r.done==="2")){wk.n++;wk.km+=+r.km||0;wk.min+=+r.min||0}}
+  let wk={n:0,km:0,min:0,kcal:0};
+  for(let i=0;i<7;i++){const kk=iso(addD(mon,i)),r=H.runs[kk];if(r&&(r.done==="1"||r.done==="2")){wk.n++;wk.km+=+r.km||0;wk.min+=+r.min||0;wk.kcal+=burnOf(kk,r)}}
   const tx=txItems();
   const {start,next}=cycle(today,s.payDay);
   const inCy=tx.filter(x=>x.date>=iso(start)&&x.date<iso(next));
@@ -429,7 +432,7 @@ function render(){
     $("wBar").style.width=(p*100).toFixed(1)+"%";
     $("wStart").textContent="เริ่ม "+kg(C.wStart)+" kg";
   }
-  $("runWeek").innerHTML=C.wk.n?"สัปดาห์นี้วิ่ง <b>"+C.wk.n+" ครั้ง</b> · <b>"+C.wk.km.toFixed(1)+" กม.</b> · "+C.wk.min+" นาที":"สัปดาห์นี้ยังไม่มีการวิ่ง";
+  $("runWeek").innerHTML=C.wk.n?"สัปดาห์นี้วิ่ง <b>"+C.wk.n+" ครั้ง</b> · <b>"+C.wk.km.toFixed(1)+" กม.</b> · "+C.wk.min+" นาที"+(C.wk.kcal?" · เผาผลาญ ≈ <b>"+C.wk.kcal.toLocaleString()+" kcal</b>":""):"สัปดาห์นี้ยังไม่มีการวิ่ง";
 
   /* money */
   $("spToday").textContent=baht(C.spentToday);
@@ -474,16 +477,6 @@ function render(){
 
 /* ---- coach ---- */
 let sampleFn=null,ctl=null;
-function context(){
-  const C=summary();
-  const runs=Object.entries(H.runs).filter(([k])=>k>=iso(addD(C.today,-20))).sort().map(([k,r])=>({date:k,done:{1:"ตามแผน",2:"บางส่วน",3:"ข้าม"}[r.done]||"",min:r.min,km:r.km,hr:r.hr,feel:r.feel}));
-  const tx=C.tx.filter(x=>x.date>=iso(C.start)).map(x=>({date:x.date,amt:x.amt,cat:x.cat,note:x.note}));
-  return {
-    วันนี้:C.t,ชื่อเล่น:(C.s.nick||"โต"),
-    สุขภาพ:{น้ำหนักล่าสุด:C.wNow,น้ำหนักเริ่ม:C.wStart,เป้า:GOAL,ประวัติชั่ง:C.W.slice(-10),การวิ่ง20วัน:runs,โซนชีพจรเป้า:"135-145",แผน:"วิ่งสลับเดิน 12 สัปดาห์ ออกวิ่ง 4:45 วิ่งยาววันเสาร์ กิน 2 มื้อ 10:00 และบ่ายแก่"},
-    เงิน:{วันเงินเดือนออก:C.s.payDay,รอบเริ่ม:iso(C.start),รอบถัดไป:iso(C.next),ใช้จ่ายรอบนี้ไม่รวมหนี้:Math.round(C.spentCy),ผ่อนหนี้รอบนี้:Math.round(C.debtCy),ค่าอาหารรอบนี้:Math.round(C.foodCy),งบอาหารต่อเดือน:Math.round(C.foodBudM),งบใช้จ่ายรายวัน:Math.round(C.dayBud),รายการรอบนี้:tx.slice(-60)}
-  };
-}
 const VIEW_TH={home:"ภาพรวม",fit:"ฟิต",aom:"ออม"};
 const AOM_TH={overview:"สรุป",debt:"ปลดหนี้",ledger:"รับ-จ่าย",goals:"เป้าออม",retire:"เกษียณ",learn:"ความรู้"};
 const CHIPS={
@@ -495,7 +488,7 @@ let turns=[];
 function subView(){try{if(view==="aom"){const h=TL.env.aom.location.hash.slice(1)||"overview";return AOM_TH[h]||h}}catch(e){}return ""}
 function context(){
   const C=summary();
-  const runs=Object.entries(H.runs).filter(([k])=>k>=iso(addD(C.today,-20))).sort().map(([k,r])=>({date:k,done:{1:"ตามแผน",2:"บางส่วน",3:"ข้าม"}[r.done]||"",min:r.min,km:r.km,hr:r.hr,feel:r.feel}));
+  const runs=Object.entries(H.runs).filter(([k])=>k>=iso(addD(C.today,-20))).sort().map(([k,r])=>({date:k,done:{1:"ตามแผน",2:"บางส่วน",3:"ข้าม"}[r.done]||"",min:r.min,km:r.km,hr:r.hr,feel:r.feel,kcalเผาผลาญ:burnOf(k,r)}));
   const tx=C.tx.filter(x=>x.date>=iso(C.start)).map(x=>({date:x.date,amt:x.amt,cat:x.cat,note:x.note}));
   const d=H.day||{},meals=[];
   Object.entries(d.a||{}).forEach(([k,v])=>meals.push({มื้อ:k==="s"?"รองท้อง":"มื้อที่"+(+k+1),เมนู:v.d||"",kcal:v.k,โปรตีน:v.p}));

@@ -218,3 +218,29 @@ def patch_fit_photo_js(js):
     js = rep(js, '  q("[data-price]").forEach(',
              '  q("[data-savephoto]").forEach(b=>b.onclick=()=>savePhoto(b.dataset.savephoto,b.dataset.pname,b));\n  q("[data-price]").forEach(')
     return js
+
+
+# ---------- calories burned from logged exercise ----------
+BURN_JS = r'''
+/* โตไลฟ์: run/walk energy — distance known: ~1 kcal per kg per km; else ~6.5 MET for run/walk intervals */
+function wtOn(k){const w=(S.weights||[]).filter(r=>r[0]<=k);const r=w.length?w[w.length-1]:(S.weights||[])[0];return r?+r[1]:85}
+function burnOf(k,l){if(!l||!(l.done==="1"||l.done==="2"))return 0;const kg=wtOn(k),km=parseFloat(l.km),mn=parseFloat(l.min);
+  let v=0;if(km>0)v=kg*km;else if(mn>0)v=6.5*kg*mn/60;return Math.round(v/10)*10}
+'''
+
+
+def patch_fit_burn(js, body, css):
+    js = rep(js, 'function renderRun(){', BURN_JS + 'function renderRun(){')
+    js = rep(js, '''${ok?'<span class="ok">✓</span>'+(l.km?" "+esc(l.km)+" กม.":""):l.done==="3"?"ข้าม":""}''',
+             '''${ok?'<span class="ok">✓</span>'+(l.km?" "+esc(l.km)+" กม.":"")+(burnOf(kk,l)?" · "+burnOf(kk,l)+" kcal":""):l.done==="3"?"ข้าม":""}''')
+    js = rep(js, 'let dn=0,mn=0,km=0;for(let i=0;i<7;i++){const l=S.runs[iso(addD(mon,i))];if(l&&(l.done==="1"||l.done==="2")){dn++;mn+=+l.min||0;km+=+l.km||0}}',
+             'let dn=0,mn=0,km=0,bk=0;for(let i=0;i<7;i++){const kk=iso(addD(mon,i)),l=S.runs[kk];if(l&&(l.done==="1"||l.done==="2")){dn++;mn+=+l.min||0;km+=+l.km||0;bk+=burnOf(kk,l)}}')
+    js = rep(js, '$("rKm").textContent=km.toFixed(1);', '$("rKm").textContent=km.toFixed(1);$("rKcal").textContent=bk.toLocaleString();')
+    js = rep(js, '$("runStatus").textContent=db?"บันทึกแล้ว":"บันทึกในเครื่องนี้แล้ว";',
+             '{const b=burnOf(k,rec);$("runStatus").textContent=(db?"บันทึกแล้ว":"บันทึกในเครื่องนี้แล้ว")+(b?" · เผาผลาญ ≈ "+b+" kcal":"")}')
+    js = rep(js, '''$("kLeg").innerHTML='<span>กินจริง '+EK.toLocaleString()+'</span><span class="pl">แผน '+K.toLocaleString()+'</span>';''',
+             '''{const b=burnOf(k,S.runs[k]);$("kLeg").innerHTML='<span>กินจริง '+EK.toLocaleString()+'</span><span class="pl">แผน '+K.toLocaleString()+'</span>'+(b?'<span class="burn">ออกกำลังเผาผลาญ ≈ '+b.toLocaleString()+' kcal (เป้าไม่เปลี่ยน)</span>':'')}''')
+    body = rep(body, '<div><b id="rKm">0</b><span>กม. รวม</span></div>',
+               '<div><b id="rKm">0</b><span>กม. รวม</span></div><div><b id="rKcal">0</b><span>kcal ใช้ไป</span></div>')
+    css += "\n.stats{grid-template-columns:repeat(4,1fr)!important}\n.burn{flex-basis:100%;color:var(--run);font-weight:600}\n"
+    return js, body, css
