@@ -244,3 +244,16 @@ def patch_fit_burn(js, body, css):
                '<div><b id="rKm">0</b><span>กม. รวม</span></div><div><b id="rKcal">0</b><span>kcal ใช้ไป</span></div>')
     css += "\n.stats{grid-template-columns:repeat(4,1fr)!important}\n.burn{flex-basis:100%;color:var(--run);font-weight:600}\n"
     return js, body, css
+
+
+# ---------- one eat toggle per meal (no separate "ไม่ได้กิน") ----------
+def patch_fit_eat_toggle(js):
+    js = rep(js, '${sk?"":`<button class="chipbtn${eaten?" on":""}" data-eat="${i}" aria-pressed="${eaten}">${eaten?"กินแล้ว ✓":"กินแล้ว"}</button>`}<button class="chipbtn${sk?" on":""}" data-skip="${i}" aria-pressed="${!!sk}">${sk?"ไม่ได้กิน ✓ (กดยกเลิก)":"ไม่ได้กิน"}</button>',
+             '<button class="chipbtn${eaten?" on":""}" data-eat="${i}" aria-pressed="${eaten}">${eaten?"กินแล้ว ✓":"ยังไม่กิน · แตะเมื่อกิน"}</button>')
+    js = rep(js, '${sSk?"":`<button class="chipbtn${sEaten?" on":""}" data-eatsnack="1" aria-pressed="${sEaten}">${sEaten?"กินแล้ว ✓":"กินแล้ว"}</button>`}<button class="chipbtn${sSk?" on":""}" data-skip="s" aria-pressed="${!!sSk}">${sSk?"ไม่ได้กิน ✓ (กดยกเลิก)":"ไม่ได้กิน"}</button>',
+             '<button class="chipbtn${sEaten?" on":""}" data-eatsnack="1" aria-pressed="${sEaten}">${sEaten?"กินแล้ว ✓":"ยังไม่กิน · แตะเมื่อกิน"}</button>')
+    js = rep(js, 'q("[data-eat]").forEach(b=>b.onclick=()=>{toggleIdx(k,mealIdx(p,+b.dataset.eat));saveDay(k);render()});',
+             'q("[data-eat]").forEach(b=>b.onclick=()=>{const dd=day(k);if(dd.n)delete dd.n[b.dataset.eat];toggleIdx(k,mealIdx(p,+b.dataset.eat));saveDay(k);render()});')
+    js = rep(js, 'q("[data-eatsnack]").forEach(b=>b.onclick=()=>{toggleIdx(k,snackIdx(p));saveDay(k);render()});',
+             'q("[data-eatsnack]").forEach(b=>b.onclick=()=>{const dd=day(k);if(dd.n)delete dd.n.s;toggleIdx(k,snackIdx(p));saveDay(k);render()});')
+    return js

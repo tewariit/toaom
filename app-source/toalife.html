@@ -2176,7 +2176,7 @@ function renderMeals(k,p){
         ${act&&act.w?`<span class="warnline">⚠ ${esc(act.w)}</span>`:""}
         ${editing===k+":m"+i?editForm(k+":m"+i,e,!!act):""}${priceEd(k,String(i),nm?act.d:r.text)}
         <div class="acts">
-          ${sk?"":`<button class="chipbtn${eaten?" on":""}" data-eat="${i}" aria-pressed="${eaten}">${eaten?"กินแล้ว ✓":"กินแล้ว"}</button>`}<button class="chipbtn${sk?" on":""}" data-skip="${i}" aria-pressed="${!!sk}">${sk?"ไม่ได้กิน ✓ (กดยกเลิก)":"ไม่ได้กิน"}</button>
+          <button class="chipbtn${eaten?" on":""}" data-eat="${i}" aria-pressed="${eaten}">${eaten?"กินแล้ว ✓":"ยังไม่กิน · แตะเมื่อกิน"}</button>
           ${priceChip(k,String(i))}${canPhoto()?`<button class="chipbtn photo" data-photo="${i}" ${bz?"disabled":""}>${ph[i]?"ถ่ายใหม่":"ถ่ายรูปที่กิน"}</button>`:""}
           <button class="chipbtn" data-swap="${i}">${r.school?"ไม่ได้กินที่โรงเรียน":"หาไม่ได้ เปลี่ยนเมนู"}</button>
           ${r.swap!=null?`<button class="chipbtn" data-back="${i}">${r.orig===SCHOOL?"กลับไปกินที่โรงเรียน":"กลับเมนูเดิม"}</button>`:""}
@@ -2193,7 +2193,7 @@ function renderMeals(k,p){
     ${sAct&&sAct.d&&!sNm?`<span class="note">AI เห็น: ${esc(sAct.d)}</span>`:""}
     ${sAct&&sAct.w?`<span class="warnline">⚠ ${esc(sAct.w)}</span>`:""}
     ${editing===k+":ms"?editForm(k+":ms",se,!!sAct):""}${priceEd(k,"s",sNm?sAct.d:sTxt)}
-    <div class="acts">${sSk?"":`<button class="chipbtn${sEaten?" on":""}" data-eatsnack="1" aria-pressed="${sEaten}">${sEaten?"กินแล้ว ✓":"กินแล้ว"}</button>`}<button class="chipbtn${sSk?" on":""}" data-skip="s" aria-pressed="${!!sSk}">${sSk?"ไม่ได้กิน ✓ (กดยกเลิก)":"ไม่ได้กิน"}</button>
+    <div class="acts"><button class="chipbtn${sEaten?" on":""}" data-eatsnack="1" aria-pressed="${sEaten}">${sEaten?"กินแล้ว ✓":"ยังไม่กิน · แตะเมื่อกิน"}</button>
     ${priceChip(k,"s")}${canPhoto()?`<button class="chipbtn photo" data-photo="s" ${sbz?"disabled":""}>${ph.s?"ถ่ายใหม่":"ถ่ายรูปที่กิน"}</button>`:""}
     <button class="chipbtn" data-sswap="1">หาไม่ได้ เปลี่ยนเมนู</button>
     ${sSw?`<button class="chipbtn" data-sback="1">กลับเมนูเดิม</button>`:""}
@@ -2226,9 +2226,9 @@ function renderMeals(k,p){
 function toggleIdx(k,idx,on){const dd=day(k);dd.c=dd.c||[];const has=dd.c.includes(idx);if(on===undefined)on=!has;if(on&&!has)dd.c.push(idx);if(!on&&has)dd.c=dd.c.filter(x=>x!==idx)}
 function bindMeals(k,p){
   const q=s=>$("b-meals").querySelectorAll(s);
-  q("[data-eat]").forEach(b=>b.onclick=()=>{toggleIdx(k,mealIdx(p,+b.dataset.eat));saveDay(k);render()});
+  q("[data-eat]").forEach(b=>b.onclick=()=>{const dd=day(k);if(dd.n)delete dd.n[b.dataset.eat];toggleIdx(k,mealIdx(p,+b.dataset.eat));saveDay(k);render()});
   q("[data-skip]").forEach(b=>b.onclick=()=>{const v=b.dataset.skip,dd=day(k);dd.n=dd.n||{};if(dd.n[v])delete dd.n[v];else{dd.n[v]=1;toggleIdx(k,v==="s"?snackIdx(p):mealIdx(p,+v),false)}saveDay(k);render()});
-  q("[data-eatsnack]").forEach(b=>b.onclick=()=>{toggleIdx(k,snackIdx(p));saveDay(k);render()});
+  q("[data-eatsnack]").forEach(b=>b.onclick=()=>{const dd=day(k);if(dd.n)delete dd.n.s;toggleIdx(k,snackIdx(p));saveDay(k);render()});
   q("[data-swap]").forEach(b=>b.onclick=()=>{const i=+b.dataset.swap,r=p.rows[i],pool=POOL[r.pool],dd=day(k);dd.s=dd.s||{};let n=r.swap==null?(p.wd*3+i)%pool.length:(r.swap+1)%pool.length;if(pool[n]===r.orig)n=(n+1)%pool.length;dd.s[i]=n;saveDay(k);render()});
   q("[data-back]").forEach(b=>b.onclick=()=>{const dd=day(k);if(dd.s)delete dd.s[+b.dataset.back];saveDay(k);render()});
   q("[data-sswap]").forEach(b=>b.onclick=()=>{const dd=day(k);let n=dd.ss==null?(p.wd+1)%SNACK_POOL.length:(dd.ss+1)%SNACK_POOL.length;if(SNACK_POOL[n]===p.snack)n=(n+1)%SNACK_POOL.length;dd.ss=n;saveDay(k);render()});
