@@ -47,9 +47,13 @@ for k in ["FIT", "AOM"]:
     if k == "FIT":
         js = patches.patch_fit_js(js)
         body, css = patches.patch_fit_body(body, css)
+        css = patches.patch_fit_layout_css(css)
+        js = patches.patch_fit_layout_js(js)
     else:
         js = patches.patch_aom_js(js)
         css = patches.patch_aom_css(css)
+        css = patches.patch_aom_layout_css(css)
+        body = patches.patch_aom_body(body)
     tpl = "<style>" + BASE + css + "</style><div class=\"tl-body\">" + body + "</div>"
     shell = shell.replace("{{%s_TPL}}" % k, tpl).replace("{{%s_JS}}" % k, js)
 assert "{{" not in re.sub(r'\$\{\{', '', shell) or True

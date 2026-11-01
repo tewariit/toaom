@@ -138,3 +138,53 @@ def patch_aom_css(css):
 .q-meter.warn i{background:var(--warn)}
 .q-meter.bad i{background:var(--bad)}
 """
+
+
+# ---------- compact layout: one header (the shell's), real bottom tab bar in ออม ----------
+SETTINGS_BTN = ('<button class="icon-btn" id="openSettings" type="button" aria-label="ข้อมูลของฉัน" title="ข้อมูลของฉัน">'
+                '<svg viewBox="0 0 24 24"><path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2.2"/><circle cx="9" cy="17" r="2.2"/></svg></button>')
+
+
+def patch_aom_body(body):
+    body = rep(body, '</svg>ภาพรวม</a>', '</svg>สรุป</a>')
+    body = rep(body, SETTINGS_BTN, '')
+    # settings becomes the 7th tab, so it is reachable on phones
+    i = body.index('<a href="#learn" data-v="learn">')
+    j = body.index('</a>', i) + 4
+    btn = (SETTINGS_BTN.replace('<button class="icon-btn" id="openSettings"', '<button class="icon-btn tl-set" id="openSettings"')
+           .replace('</svg></button>', '</svg><span class="tl-lab">ข้อมูล</span></button>'))
+    body = body[:j] + btn + body[j:]
+    return body
+
+
+def patch_aom_layout_css(css):
+    css = rep(css, 'backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);', '')
+    css = rep(css, 'grid-template-columns:repeat(6,1fr)', 'grid-template-columns:repeat(7,1fr)')
+    return css + """
+.top .brand{display:none}
+.greet{display:none}
+.tabs .tl-set .tl-lab{display:none}
+@media (max-width:760px){
+  .top{position:static;border:0;background:transparent}
+  .top-in{min-height:0}
+  .tabs a{font-size:11.5px}
+  .tabs .tl-set{width:auto;height:auto;border:0;border-radius:0;background:transparent;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:8px 0 7px;color:var(--ink-2);font:600 11.5px/1.2 var(--f-body)}
+  .tabs .tl-set .tl-lab{display:block}
+  .toasts{bottom:calc(84px + env(safe-area-inset-bottom,0px))}
+}
+"""
+
+
+def patch_fit_layout_css(css):
+    return css + """
+.logo,header h1{display:none}
+header{align-items:center}
+.progress{font-size:.85rem}
+.progress br{display:none}
+#askFab{display:none!important}
+"""
+
+
+def patch_fit_layout_js(js):
+    return rep(js, '$("prog").innerHTML=dayNo<1?"เริ่มแผน<br>อีก "+(1-dayNo)+" วัน":"วันที่ "+dayNo+"<br>ของแผน";',
+               '$("prog").innerHTML=dayNo<1?"เริ่มแผนอีก "+(1-dayNo)+" วัน":"วันที่ "+dayNo+" ของแผน";')

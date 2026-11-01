@@ -464,6 +464,12 @@ input[type=range]{padding:0;border:0;background:none;accent-color:var(--brand)}
 #datebar{display:none!important}
 .chipbtn.paid{border-color:var(--good);color:var(--good);font-weight:600}
 .prf .btn{min-height:40px}
+
+.logo,header h1{display:none}
+header{align-items:center}
+.progress{font-size:.85rem}
+.progress br{display:none}
+#askFab{display:none!important}
 </style><div class="tl-body"><div class="app">
   <header>
     <div class="brand"><img class="logo" id="logo" alt=""><div><h1>โตฟิต</h1><div class="sub">ลดน้ำหนัก 86 → 72 kg · <span id="sync">บันทึกในเครื่องนี้</span></div></div></div>
@@ -813,7 +819,7 @@ button{font-family:inherit}
 .row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
 
 /* header */
-.top{position:sticky;top:calc(env(safe-area-inset-top,0px) + var(--tl-bar,52px));z-index:20;background:var(--paper);background:color-mix(in srgb,var(--paper) 90%,transparent);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+.top{position:sticky;top:calc(env(safe-area-inset-top,0px) + var(--tl-bar,52px));z-index:20;background:var(--paper);background:color-mix(in srgb,var(--paper) 90%,transparent);border-bottom:1px solid var(--line)}
 .top-in{display:flex;align-items:center;gap:14px;min-height:62px}
 .brand{display:flex;align-items:center;gap:10px;color:var(--ink);text-decoration:none}
 .brand .word{font-family:var(--f-display);font-size:25px;line-height:1;letter-spacing:.01em;padding-top:3px}
@@ -828,7 +834,7 @@ button{font-family:inherit}
 
 @media (max-width:760px){
   .top-in{justify-content:space-between}
-  .tabs{position:fixed;left:0;right:0;bottom:0;z-index:25;margin:0;display:grid;grid-template-columns:repeat(6,1fr);gap:0;background:var(--card);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom,0px);padding-left:max(2px,env(safe-area-inset-left,0px));padding-right:max(2px,env(safe-area-inset-right,0px))}
+  .tabs{position:fixed;left:0;right:0;bottom:0;z-index:25;margin:0;display:grid;grid-template-columns:repeat(7,1fr);gap:0;background:var(--card);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom,0px);padding-left:max(2px,env(safe-area-inset-left,0px));padding-right:max(2px,env(safe-area-inset-right,0px))}
   .tabs a{flex-direction:column;gap:2px;border-radius:0;padding:8px 0 7px;font-size:12px;justify-content:center;position:relative}
   .tabs a[aria-current="page"]{background:transparent;color:var(--jade)}
   .tabs a[aria-current="page"]::before{content:"";position:absolute;top:0;left:22%;right:22%;height:3px;border-radius:0 0 3px 3px;background:var(--jade)}
@@ -1248,6 +1254,18 @@ details.card[open]{box-shadow:var(--shadow)}
 .q-meter i{display:block;height:100%;border-radius:999px;background:var(--good)}
 .q-meter.warn i{background:var(--warn)}
 .q-meter.bad i{background:var(--bad)}
+
+.top .brand{display:none}
+.greet{display:none}
+.tabs .tl-set .tl-lab{display:none}
+@media (max-width:760px){
+  .top{position:static;border:0;background:transparent}
+  .top-in{min-height:0}
+  .tabs a{font-size:11.5px}
+  .tabs .tl-set{width:auto;height:auto;border:0;border-radius:0;background:transparent;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:8px 0 7px;color:var(--ink-2);font:600 11.5px/1.2 var(--f-body)}
+  .tabs .tl-set .tl-lab{display:block}
+  .toasts{bottom:calc(84px + env(safe-area-inset-bottom,0px))}
+}
 </style><div class="tl-body"><header class="top">
   <div class="wrap top-in">
     <a class="brand" href="#overview" aria-label="โตออม หน้าแรก">
@@ -1255,14 +1273,14 @@ details.card[open]{box-shadow:var(--shadow)}
       <span class="brand-txt"><span class="word">โตออม</span><span class="brand-sub">สมุดปลดหนี้ ทันเกษียณ</span></span>
     </a>
     <nav class="tabs" id="tabs" aria-label="เมนูหลัก">
-      <a href="#overview" data-v="overview"><svg viewBox="0 0 24 24"><path d="M4 11.5 12 5l8 6.5V20h-5v-5H9v5H4z"/></svg>ภาพรวม</a>
+      <a href="#overview" data-v="overview"><svg viewBox="0 0 24 24"><path d="M4 11.5 12 5l8 6.5V20h-5v-5H9v5H4z"/></svg>สรุป</a>
       <a href="#debt" data-v="debt"><svg viewBox="0 0 24 24"><path d="M4 6l6 6 3-3 7 7"/><path d="M20 10v6h-6"/></svg>ปลดหนี้</a>
       <a href="#ledger" data-v="ledger"><svg viewBox="0 0 24 24"><path d="M6 4h11a2 2 0 0 1 2 2v14H8a2 2 0 0 1-2-2z"/><path d="M6 18a2 2 0 0 1 2-2h11M10 8h6M10 11h4"/></svg>รับ–จ่าย</a>
       <a href="#goals" data-v="goals"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4"/><circle cx="12" cy="12" r=".6"/></svg>เป้าออม</a>
       <a href="#retire" data-v="retire"><svg viewBox="0 0 24 24"><path d="M3 18h18M7 18a5 5 0 0 1 10 0M12 7v3M5.6 11.6 7 13M18.4 11.6 17 13"/></svg>เกษียณ</a>
-      <a href="#learn" data-v="learn"><svg viewBox="0 0 24 24"><path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2.1h5c0-.9.4-1.6 1-2.1A6 6 0 0 0 12 3z"/></svg>ความรู้</a>
+      <a href="#learn" data-v="learn"><svg viewBox="0 0 24 24"><path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2.1h5c0-.9.4-1.6 1-2.1A6 6 0 0 0 12 3z"/></svg>ความรู้</a><button class="icon-btn tl-set" id="openSettings" type="button" aria-label="ข้อมูลของฉัน" title="ข้อมูลของฉัน"><svg viewBox="0 0 24 24"><path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2.2"/><circle cx="9" cy="17" r="2.2"/></svg><span class="tl-lab">ข้อมูล</span></button>
     </nav>
-    <button class="icon-btn" id="openSettings" type="button" aria-label="ข้อมูลของฉัน" title="ข้อมูลของฉัน"><svg viewBox="0 0 24 24"><path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2.2"/><circle cx="9" cy="17" r="2.2"/></svg></button>
+    
   </div>
 </header>
 
@@ -2041,7 +2059,7 @@ function renderHeader(){
   $("ddate").textContent=cur.getDate()+" "+TH_M[cur.getMonth()]+" "+(cur.getFullYear()+543);
   $("gotoday").hidden=+cur===+today;
   const dayNo=daysBetween(+parse(S.cfg.start),+today)+1;
-  $("prog").innerHTML=dayNo<1?"เริ่มแผน<br>อีก "+(1-dayNo)+" วัน":"วันที่ "+dayNo+"<br>ของแผน";
+  $("prog").innerHTML=dayNo<1?"เริ่มแผนอีก "+(1-dayNo)+" วัน":"วันที่ "+dayNo+" ของแผน";
   const showNow=tabNow==="day"&&+cur===+today;$("nowline").hidden=!showNow;if(showNow)$("nowline").textContent=nowText(p);
   $("fab").hidden=!(tabNow==="day"&&+cur===+today);$("askFab").hidden=!aiOK;
 }
@@ -3962,7 +3980,7 @@ function context(){
   };
 }
 const VIEW_TH={home:"ภาพรวม",fit:"ฟิต",aom:"ออม"};
-const AOM_TH={overview:"ภาพรวม",debt:"ปลดหนี้",ledger:"รับ-จ่าย",goals:"เป้าออม",retire:"เกษียณ",learn:"ความรู้"};
+const AOM_TH={overview:"สรุป",debt:"ปลดหนี้",ledger:"รับ-จ่าย",goals:"เป้าออม",retire:"เกษียณ",learn:"ความรู้"};
 const CHIPS={
   home:["สรุปวันนี้ทั้งสุขภาพและเงิน","สัปดาห์นี้ควรปรับอะไรก่อน","เมนูคลีนที่ประหยัดสำหรับรอบเงินเดือนนี้"],
   fit:["มื้อต่อไปควรกินอะไร ให้โปรตีนพอและไม่เกินงบ","การวิ่งสัปดาห์นี้หนักไปหรือเบาไป","น้ำหนักลงช้า ควรปรับตรงไหน"],
