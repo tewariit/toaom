@@ -182,7 +182,7 @@ header{align-items:center}
 .progress{font-size:.85rem}
 .progress br{display:none}
 #askFab{display:none!important}
-#t-shop,#goEat{display:none!important}
+#t-shop,#goEat,#b-prep{display:none!important}
 .tabs{grid-template-columns:repeat(3,1fr)!important}
 """
 
