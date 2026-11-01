@@ -99,6 +99,11 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
 .track.aom i{background:var(--aom)}
 .track.over i{background:var(--bad)}
 .track .tick{position:absolute;top:-4px;bottom:-4px;width:2px;background:var(--ink)}
+.eat{display:flex;flex-direction:column;gap:6px;padding:10px 12px;border-radius:12px;background:var(--fit-soft)}
+.eatrow{display:flex;justify-content:space-between;align-items:baseline;font-weight:600;color:var(--fit)}
+.eatrow b{font:600 20px/1.2 var(--f-mono);font-variant-numeric:tabular-nums;color:var(--ink)}
+.track.eatt{background:var(--card)}
+.track.eatt.over i{background:var(--bad)}
 .ends{display:flex;justify-content:space-between;font-size:12.5px;color:var(--ink-3)}
 .chip{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:999px;font-size:13.5px;font-weight:600;background:var(--sunk);color:var(--ink-2);align-self:flex-start}
 .chip.ok{background:var(--aom-soft);color:var(--good)}
@@ -179,6 +184,7 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
       <div class="sub" id="wSub">ยังไม่มีผลชั่ง บันทึกได้ในแท็บฟิต</div>
       <div class="track" aria-hidden="true"><i id="wBar" style="width:0"></i></div>
       <div class="ends"><span id="wStart">เริ่ม</span><span>เป้า 72 kg</span></div>
+      <div class="eat" id="eatBox" hidden><div class="eatrow"><span id="eatLab">กินวันนี้</span><b id="eatK">0</b></div><div class="track eatt" aria-hidden="true"><i id="eatBar" style="width:0"></i></div><div class="ends"><span id="eatP">โปรตีน</span><span>เป้า 1,800 kcal</span></div></div>
       <div class="sub" id="runWeek">สัปดาห์นี้ยังไม่มีการวิ่ง</div>
       <a class="btn go fit" href="#fit">เปิดฟิต →</a>
     </section>
@@ -207,7 +213,7 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
   <section class="card" aria-labelledby="wkH">
     <h2 id="wkH">7 วันล่าสุด</h2>
     <div style="overflow-x:auto"><div class="week" id="week"></div></div>
-    <div class="legend"><span><i class="ld full"></i>วิ่งตามแผน</span><span><i class="ld part"></i>ทำบางส่วน</span><span>ตัวเลข = ใช้จ่ายทั้งวัน ไม่รวมผ่อนหนี้ · สีแดง = ค่าใช้จ่ายรายวันเกินงบเฉลี่ย</span></div>
+    <div class="legend"><span><i class="ld full"></i>วิ่งตามแผน</span><span><i class="ld part"></i>ทำบางส่วน</span><span>กิน = kcal ที่กินแล้ว (1.3k = 1,300) แดง = เกิน 1,800</span><span>จ่าย = ใช้จ่ายทั้งวัน ไม่รวมผ่อนหนี้ แดง = เกินงบเฉลี่ย</span></div>
   </section>
 
   <section class="card" aria-labelledby="cH">
@@ -432,6 +438,10 @@ function render(){
     $("wBar").style.width=(p*100).toFixed(1)+"%";
     $("wStart").textContent="เริ่ม "+kg(C.wStart)+" kg";
   }
+  const ek=TL.fitKcal?TL.fitKcal(C.t):null,eb=$("eatBox");
+  if(ek){eb.hidden=false;$("eatLab").textContent="กิน"+(isT?"วันนี้":"วันนั้น");$("eatK").textContent=ek.k.toLocaleString()+" / "+ek.goal.toLocaleString()+" kcal";
+    $("eatBar").style.width=Math.min(100,ek.k/ek.goal*100).toFixed(1)+"%";eb.querySelector(".eatt").classList.toggle("over",ek.k>ek.goal);
+    $("eatP").textContent="โปรตีน "+ek.p+" / "+ek.pGoal+" g"}else eb.hidden=true;
   $("runWeek").innerHTML=C.wk.n?"สัปดาห์นี้วิ่ง <b>"+C.wk.n+" ครั้ง</b> · <b>"+C.wk.km.toFixed(1)+" กม.</b> · "+C.wk.min+" นาที"+(C.wk.kcal?" · เผาผลาญ ≈ <b>"+C.wk.kcal.toLocaleString()+" kcal</b>":""):"สัปดาห์นี้ยังไม่มีการวิ่ง";
 
   /* money */
@@ -469,6 +479,9 @@ function render(){
   days7.forEach(d=>{const r=H.runs[iso(d)]||{};const c=r.done==="1"?"full":r.done==="2"?"part":r.done==="3"?"skip":"";
     const lbl=r.done==="1"?"วิ่งตามแผน":r.done==="2"?"ทำบางส่วน":r.done==="3"?"ข้าม":"ไม่มีบันทึก";
     h+=`<div class="dot ${c}" title="${lbl}" aria-label="${thD(d)} ${lbl}"></div>`});
+  h+='<div class="rh">กิน</div>';
+  days7.forEach(d=>{const e=TL.fitKcal?TL.fitKcal(iso(d)):null,v=e&&e.k?e.k:0;
+    h+=`<div class="amt${v>1800?" hi":""}">${v?(v>=1000?(v/1000).toFixed(1)+"k":v):"·"}</div>`});
   h+='<div class="rh">จ่าย</div>';
   days7.forEach(d=>{const k=iso(d),dl=C.tx.filter(x=>x.date===k),a=spendOf(dl),da=dl.filter(x=>DAILY.includes(x.cat)).reduce((s,x)=>s+(+x.amt||0),0);
     h+=`<div class="amt${C.dayAvgBud&&da>C.dayAvgBud?" hi":""}">${a?Math.round(a).toLocaleString("th-TH"):"·"}</div>`});
@@ -558,6 +571,7 @@ $("askQs").addEventListener("click",e=>{const b=e.target.closest("button");if(b)
   let unDay=null;
   const subDay=()=>{try{unDay&&unDay()}catch(e){}H.day=null;unDay=db.doc("days/"+iso(TL.date)).onSnapshot(s=>{H.day=s.exists?s.data():null},()=>{})};
   subDay();TL.onDate(subDay);
+  db.collection("days").onSnapshot(()=>{if(view==="home")setTimeout(render,400)},()=>{});
   db.doc("meta/weights").onSnapshot(s=>{H.weights=(s.exists&&s.data().list)||[];if(view==="home")render()},()=>{});
   try{user=await window.claude.use("user")}catch(e){user=null}
   const id=user&&typeof user.id==="function"?await user.id().catch(()=>null):null;

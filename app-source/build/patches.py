@@ -263,3 +263,9 @@ def patch_fit_totals_fix(js):
     # a meal counts as eaten only when its own checklist item is ticked (was compared by row number)
     return rep(js, 'K+=+e.k||0;P+=+e.p||0;if(c.includes(i)){EK+=+e.k||0;EP+=+e.p||0}',
                'K+=+e.k||0;P+=+e.p||0;if(c.includes(mealIdx(p,i))){EK+=+e.k||0;EP+=+e.p||0}')
+
+
+def patch_fit_expose_kcal(js):
+    # let the overview read eaten calories per day
+    return rep(js, 'if(typeof TL!=="undefined")TL.fitDate=',
+               'if(typeof TL!=="undefined")TL.fitKcal=k=>{try{const t=dayTotals(k,plan(parse(k)));return {k:t.EK,p:t.EP,goal:1800,pGoal:140,any:!!S.days[k]}}catch(e){return null}};\nif(typeof TL!=="undefined")TL.fitDate=')
