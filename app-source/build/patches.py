@@ -1,0 +1,140 @@
+# Source patches applied on top of the original โตฟิต / โตออม code when building โตไลฟ์.
+
+def rep(s, a, b, n=1):
+    c = s.count(a)
+    assert c == n, (c, a[:80])
+    return s.replace(a, b)
+
+
+FIT_HELPERS = r'''
+/* ===== โตไลฟ์: meal price -> ออม (the ออม transaction is the single record; ฟิต only reads it back) ===== */
+let priceEditing=null,priceErr="";
+const linkOf=(k,slot)=>"fit:"+k+":"+slot;
+const hasBridge=()=>typeof TL!=="undefined"&&!!TL.aom;
+function priceOf(k,slot){try{return hasBridge()?TL.aom.linked(linkOf(k,slot)):null}catch(e){return null}}
+const shortName=n=>{n=String(n||"").trim();if(n.length<=40)return n;const c=n.slice(0,40),i=Math.max(c.lastIndexOf(" "),c.lastIndexOf("/"));return (i>20?c.slice(0,i):c)+"…"};
+const bahtTxt=v=>"฿"+(+v).toLocaleString("th-TH",{maximumFractionDigits:2});
+function priceChip(k,slot){
+  if(!hasBridge()||priceEditing===k+":"+slot)return "";
+  const v=priceOf(k,slot);
+  return `<button class="chipbtn price${v!=null?" paid":""}" data-price="${slot}">${v!=null?bahtTxt(v)+" · แก้ราคา":"ใส่ราคา ฿"}</button>`;
+}
+function priceEd(k,slot,name){
+  if(priceEditing!==k+":"+slot)return "";
+  const v=priceOf(k,slot);
+  return `<div class="editf prf"><label>ราคา (บาท)<input id="prIn" type="number" inputmode="decimal" min="0" max="100000" step="any" value="${v!=null?v:""}" placeholder="เช่น 70"></label>
+    <button class="btn" data-prsave="${slot}" data-prname="${esc(shortName(name))}">บันทึกราคา</button>
+    ${v!=null?`<button class="chipbtn danger" data-prdel="${slot}">ลบราคา</button>`:""}<button class="chipbtn" data-prcancel="1">ยกเลิก</button>
+    <span class="note" style="flex-basis:100%">${priceErr?`<b style="color:var(--warn)">${esc(priceErr)}</b><br>`:""}ไปขึ้นในออม หมวดอาหาร ทันที · มื้อที่ทำกินเองจากของที่ซื้อตุนไว้ เว้นว่างได้ จะได้ไม่นับเงินซ้ำ</span></div>`;
+}
+function setPrice(k,slot,amt,name){
+  if(!hasBridge())return false;
+  return TL.aom.setLinked(linkOf(k,slot),amt>0?{amt,date:k,note:(name||"มื้ออาหาร")+" · จากฟิต"}:null);
+}
+let aomT=null;
+if(typeof TL!=="undefined")TL.onAomData=()=>{clearTimeout(aomT);aomT=setTimeout(()=>{
+  if(tabNow!=="day"||editing||priceEditing)return;
+  try{renderMeals(iso(cur),plan(cur))}catch(e){}},250)};
+'''
+
+FIT_BIND = r'''
+  q("[data-price]").forEach(b=>b.onclick=()=>{priceEditing=k+":"+b.dataset.price;priceErr="";renderMeals(k,p);const f=$("prIn");if(f)f.focus()});
+  q("[data-prcancel]").forEach(b=>b.onclick=()=>{priceEditing=null;priceErr="";renderMeals(k,p)});
+  q("[data-prsave]").forEach(b=>b.onclick=()=>{
+    const v=num($("prIn").value),slot=b.dataset.prsave;if(v==null||v<0||v>100000){$("prIn").focus();return}
+    if(!setPrice(k,slot,v,b.dataset.prname)){priceErr="ออมยังโหลดข้อมูลไม่เสร็จ หรืออยู่ในโหมดตัวอย่าง ลองใหม่อีกครั้ง";renderMeals(k,p);return}
+    if(v>0&&slot[0]!=="x"){toggleIdx(k,slot==="s"?snackIdx(p):mealIdx(p,+slot),true);saveDay(k)}
+    priceEditing=null;priceErr="";render()});
+  q("[data-prdel]").forEach(b=>b.onclick=()=>{setPrice(k,b.dataset.prdel,0);priceEditing=null;priceErr="";renderMeals(k,p)});
+'''
+
+
+def patch_fit_js(js):
+    js = rep(js, 'function renderMeals(k,p){', FIT_HELPERS + 'function renderMeals(k,p){')
+    js = rep(js, '${canPhoto()?`<button class="chipbtn photo" data-photo="${i}"',
+             '${priceChip(k,String(i))}${canPhoto()?`<button class="chipbtn photo" data-photo="${i}"')
+    js = rep(js, '${canPhoto()?`<button class="chipbtn photo" data-photo="s"',
+             '${priceChip(k,"s")}${canPhoto()?`<button class="chipbtn photo" data-photo="s"')
+    js = rep(js, '${editing===k+":m"+i?editForm(k+":m"+i,e,!!act):""}',
+             '${editing===k+":m"+i?editForm(k+":m"+i,e,!!act):""}${priceEd(k,String(i),nm?act.d:r.text)}')
+    js = rep(js, '${editing===k+":ms"?editForm(k+":ms",se,!!sAct):""}',
+             '${editing===k+":ms"?editForm(k+":ms",se,!!sAct):""}${priceEd(k,"s",sNm?sAct.d:sTxt)}')
+    js = rep(js, '${x.w?`<span class="warnline">⚠ ${esc(x.w)}</span>`:""}',
+             '${x.w?`<span class="warnline">⚠ ${esc(x.w)}</span>`:""}${priceEd(k,"x"+x.id,x.d)}')
+    js = rep(js, '<div class="acts"><button class="chipbtn" data-edit="${key}">แก้ตัวเลข</button>',
+             '<div class="acts"><button class="chipbtn" data-edit="${key}">แก้ตัวเลข</button>${priceChip(k,"x"+x.id)}')
+    js = rep(js, 'dd.x=(dd.x||[]).filter(y=>y!==x);saveDay(k);render();',
+             'dd.x=(dd.x||[]).filter(y=>y!==x);if(x)setPrice(k,"x"+x.id,0);saveDay(k);render();')
+    js = rep(js, '$("xText").value="";$("xK").value="";saveDay(k);',
+             'const pr0=num($("xPrice").value);$("xText").value="";$("xK").value="";$("xPrice").value="";saveDay(k);if(pr0>0)setPrice(k,"x"+item.id,pr0,shortName(item.d));')
+    # one date for the whole app: the shell's date bar drives ฟิต's `cur`
+    js = rep(js, '$("gotoday").onclick=()=>{cur=new Date(today);editing=null;render()};',
+             '$("gotoday").onclick=()=>{cur=new Date(today);editing=null;render()};\nif(typeof TL!=="undefined")TL.fitDate=d=>{const n=new Date(d);n.setHours(0,0,0,0);if(+n===+cur)return;cur=n;editing=null;priceEditing=null;render()};')
+    js = rep(js, '\nfunction render(){', '\nfunction render(){if(typeof TL!=="undefined"&&TL.fromFit)TL.fromFit(cur);')
+    # append bind handlers at the end of bindMeals (just before renderMuscle)
+    js = rep(js, '\n}\nfunction renderMuscle(k){', FIT_BIND + '}\nfunction renderMuscle(k){')
+    return js
+
+
+def patch_fit_body(body, css):
+    body = rep(body, 'aria-label="แคลอรี (ไม่บังคับ)">',
+               'aria-label="แคลอรี (ไม่บังคับ)"><input id="xPrice" class="narrow" type="number" inputmode="decimal" min="0" max="100000" step="any" placeholder="฿ ราคา" aria-label="ราคา (ไม่บังคับ)">')
+    css += "\n#datebar{display:none!important}"
+    css += "\n.chipbtn.paid{border-color:var(--good);color:var(--good);font-weight:600}\n.prf .btn{min-height:40px}\n"
+    return body, css
+
+
+AOM_BRIDGE = r'''
+/* ===== โตไลฟ์ bridge: meals priced in ฟิต live here as food transactions tagged with `link` ===== */
+TL.aomRefresh=()=>{try{scheduleRender()}catch(e){}};
+TL.aom={
+  linked(link){for(const [,b] of D()){if(b&&b.kind==='tx'&&Array.isArray(b.items)){const it=b.items.find(i=>i&&i.link===link);if(it)return num(it.amt)}}return null},
+  setLinked(link,t){
+    if(Demo.on||!Store.loaded)return false;
+    let found=null;
+    for(const [id,b] of Store.docs){if(b&&b.kind==='tx'&&Array.isArray(b.items)&&b.items.some(i=>i&&i.link===link)){found={id,b};break}}
+    if(t){
+      const key=String(t.date).slice(0,7),tid='tx-'+key;
+      if(found&&found.id===tid)return Store.put(tid,Object.assign({},found.b,{items:found.b.items.map(i=>i&&i.link===link?Object.assign({},i,{amt:num(t.amt),note:i.note||t.note,edited:Date.now()}):i)}),true);
+      if(found&&!Store.put(found.id,Object.assign({},found.b,{items:found.b.items.filter(i=>!(i&&i.link===link))}),true))return false;
+      const items=txMonth(key).slice();
+      items.push({id:uid(),ts:Date.now(),type:'out',cat:'food',amt:num(t.amt),date:t.date,note:t.note,link});
+      return Store.put(tid,{kind:'tx',month:key,items},true);
+    }
+    if(found)return Store.put(found.id,Object.assign({},found.b,{items:found.b.items.filter(i=>!(i&&i.link===link))}),true);
+    return true;
+  }
+};
+'''
+
+
+def patch_aom_js(js):
+    js = rep(js, """    txt+=' · งบวันนี้ <b>'+B(Math.max(0,perDay))+'</b>'+(spent>perDay&&perDay>0?' <span class="tag bad">เกินงบ</span>':'')}""",
+             """    txt+=' · งบวันนี้ <b>'+B(Math.max(0,perDay))+'</b>';
+    if(perDay>0){const left=perDay-spent,used=Math.min(100,spent/perDay*100);
+      txt+='<span class="q-left'+(left<0?' bad':'')+'"><span class="q-lab">'+(left>=0?'เหลือใช้ได้วันนี้':'เกินงบวันนี้')+'</span><b class="num">'+B(Math.abs(left))+'</b></span>'
+        +'<span class="q-meter'+(left<0?' bad':used>=80?' warn':'')+'" role="img" aria-label="ใช้ไป '+Math.round(used)+'% ของงบวันนี้"><i style="width:'+used.toFixed(1)+'%"></i></span>'}}""")
+    js = rep(js, 'function onData(){scheduleRender()}',
+             'function onData(){scheduleRender();try{if(typeof TL!=="undefined"&&TL.onAomData)TL.onAomData()}catch(e){}}')
+    js = rep(js, 'window.__toaom={', AOM_BRIDGE + 'window.__toaom={')
+    js = rep(js, "const today=()=>{const d=new Date();",
+             "const today=()=>{const d=(typeof TL!=='undefined'&&TL.date)?new Date(TL.date):new Date();")
+    js = rep(js, "let txt='วันนี้ใช้ไป <b>'", "const DW=(typeof TL!=='undefined'&&TL.dayWord)?TL.dayWord():'วันนี้';let txt=DW+'ใช้ไป <b>'")
+    js = rep(js, "txt+=' · งบวันนี้ <b>'", "txt+=' · งบ'+DW+' <b>'")
+    js = rep(js, "+'วันนี้ '+fullDate(now);", "+((typeof TL!=='undefined'&&TL.isToday&&!TL.isToday())?'กำลังดูวันที่ ':'วันนี้ ')+fullDate(now);")
+    js = rep(js, "let txt=DW+'ใช้ไป <b>'", "{const h=$('#quickSum')&&$('#quickSum').closest('section,.card');const h2=h&&h.querySelector('h2');if(h2&&h2.lastChild&&h2.lastChild.nodeType===3)h2.lastChild.textContent='จดรายจ่าย'+DW.trim()}let txt=DW+'ใช้ไป <b>'")
+    js = rep(js, "(left>=0?'เหลือใช้ได้วันนี้':'เกินงบวันนี้')", "(left>=0?'เหลือใช้ได้'+DW:'เกินงบ'+DW)")
+    return js
+
+
+def patch_aom_css(css):
+    return css + """
+.q-left{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-top:10px;padding:10px 12px;border-radius:12px;background:var(--good-soft);color:var(--good)}
+.q-left .q-lab{font-size:14.5px;font-weight:600}
+.q-left b{font:600 24px/1.2 var(--f-mono);font-variant-numeric:tabular-nums}
+.q-left.bad{background:var(--bad-soft);color:var(--bad)}
+.q-meter{display:block;height:6px;margin-top:6px;border-radius:999px;background:var(--sunk);overflow:hidden}
+.q-meter i{display:block;height:100%;border-radius:999px;background:var(--good)}
+.q-meter.warn i{background:var(--warn)}
+.q-meter.bad i{background:var(--bad)}
+"""

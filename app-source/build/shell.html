@@ -1,0 +1,604 @@
+<title>โตไลฟ์</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="โตไลฟ์">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chonburi&family=IBM+Plex+Mono:wght@400;500;600&family=JetBrains+Mono:wght@500;600&family=Prompt:wght@500;600;700&family=Sarabun:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: slim app bar switches between a one-column "today" overview and the two full apps (fit, money), each living in its own sealed shadow root */
+:root{
+  --bg:#ECF2EF; --card:#FAFCFB; --sunk:#E1EAE6; --ink:#14251F; --ink-2:#4E625A; --ink-3:#7A8C85; --line:#D0DDD7;
+  --fit:#C9450F; --fit-soft:#FBE3D6; --aom:#0A6A4C; --aom-soft:#D2E8DC; --good:#1F8A5B; --warn:#A8620A; --bad:#B42318;
+  --f-display:"Prompt","Sarabun",system-ui,sans-serif; --f-body:"Sarabun","Leelawadee UI","Thonburi",system-ui,sans-serif; --f-mono:"IBM Plex Mono","Sarabun",ui-monospace,monospace;
+  --tl-bar:94px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0D1613; --card:#15211C; --sunk:#1B2923; --ink:#E3ECE7; --ink-2:#A4B5AC; --ink-3:#76877E; --line:#26362F;
+  --fit:#FF7A45; --fit-soft:#3A2219; --aom:#43BD8E; --aom-soft:#163A2C; --good:#61C78F; --warn:#E4AD53; --bad:#F07F69; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0D1613; --card:#15211C; --sunk:#1B2923; --ink:#E3ECE7; --ink-2:#A4B5AC; --ink-3:#76877E; --line:#26362F;
+  --fit:#FF7A45; --fit-soft:#3A2219; --aom:#43BD8E; --aom-soft:#163A2C; --good:#61C78F; --warn:#E4AD53; --bad:#F07F69; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font:16px/1.6 var(--f-body)}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:90;background:var(--card)}
+.num{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+
+/* app bar */
+.topwrap{position:sticky;top:env(safe-area-inset-top,0px);z-index:80}
+.bar{height:52px;background:var(--card);border-bottom:1px solid var(--line);
+  padding-left:max(12px,env(safe-area-inset-left,0px));padding-right:max(12px,env(safe-area-inset-right,0px));display:flex;align-items:center;gap:10px}
+.mark{display:flex;align-items:center;gap:8px;text-decoration:none;color:var(--ink);flex:none}
+.mark i{position:relative;width:26px;height:18px;display:block}
+.mark i::before,.mark i::after{content:"";position:absolute;top:0;width:18px;height:18px;border-radius:50%}
+.mark i::before{left:0;background:var(--fit)}
+.mark i::after{left:8px;background:var(--aom);mix-blend-mode:multiply;opacity:.92}
+.mark b{font:700 19px/1 var(--f-display)}
+.sw{margin-left:auto;display:flex;gap:3px;padding:3px;border-radius:12px;background:var(--sunk)}
+.sw a{display:flex;align-items:center;gap:6px;padding:6px 12px;border-radius:9px;font:600 14.5px/1.2 var(--f-display);color:var(--ink-2);text-decoration:none;white-space:nowrap}
+.sw a::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--ink-3)}
+.sw a[data-v="fit"]::before{background:var(--fit)}
+.sw a[data-v="aom"]::before{background:var(--aom)}
+.sw a[aria-current="page"]{background:var(--card);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.12)}
+.sw a:focus-visible,.btn:focus-visible{outline:2px solid var(--aom);outline-offset:2px}
+.aib{flex:none;display:inline-flex;align-items:center;gap:6px;height:38px;padding:0 12px;border-radius:12px;border:0;background:var(--aom);color:var(--card);font:600 14.5px/1 var(--f-display);cursor:pointer}
+.aib svg{width:19px;height:19px;fill:currentColor}
+.aib:focus-visible{outline:2px solid var(--fit);outline-offset:2px}
+.sw{margin-left:auto}
+@media (max-width:520px){.mark b{display:none}.aib span{display:none}.aib{width:40px;padding:0;justify-content:center}}
+@media (max-width:360px){.sw a{padding:6px 8px}.sw a::before{display:none}}
+
+/* AI sheet (works on every page) */
+.aiscrim{position:fixed;inset:0;z-index:100;background:rgba(6,14,11,.5);display:flex;align-items:flex-end;justify-content:center}
+.aisheet{width:min(620px,100%);max-height:min(86vh,760px);display:flex;flex-direction:column;background:var(--card);color:var(--ink);border-radius:20px 20px 0 0;border:1px solid var(--line);border-bottom:0;
+  padding:14px max(16px,env(safe-area-inset-right,0px)) calc(14px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));gap:10px}
+@media (min-width:700px){.aiscrim{align-items:center}.aisheet{border-radius:20px;border-bottom:1px solid var(--line)}}
+.aihead{display:flex;align-items:flex-start;gap:8px}
+.aihead div{flex:1;min-width:0}
+.aihead h2{margin:0;font:600 18px/1.3 var(--f-display)}
+.aihead p{margin:2px 0 0;font-size:13.5px;color:var(--ink-3)}
+.aihead .btn{min-height:36px;padding:6px 12px;font-size:14px}
+.aix{width:38px;height:38px;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--ink);font-size:22px;line-height:1;cursor:pointer}
+.ailog{flex:1;min-height:80px;overflow-y:auto;display:flex;flex-direction:column;gap:10px;padding:2px 0;overscroll-behavior:contain}
+.msg{max-width:88%;padding:10px 13px;border-radius:14px;white-space:pre-wrap;font-size:15.5px;line-height:1.65;overflow-wrap:anywhere}
+.msg.u{align-self:flex-end;background:var(--aom);color:var(--card);border-bottom-right-radius:4px}
+.msg.a{align-self:flex-start;background:var(--bg);border:1px solid var(--line);border-bottom-left-radius:4px}
+.msg.a.wait{color:var(--ink-3)}
+.ailog .hello{color:var(--ink-2);font-size:14.5px}
+
+/* date bar: one date for every page */
+.dbar{height:42px;display:flex;align-items:center;gap:6px;background:var(--bg);border-bottom:1px solid var(--line);
+  padding-left:max(10px,env(safe-area-inset-left,0px));padding-right:max(10px,env(safe-area-inset-right,0px))}
+.dnav{width:36px;height:32px;flex:none;border-radius:9px;border:1px solid var(--line);background:var(--card);color:var(--ink);font:600 20px/1 var(--f-body);cursor:pointer}
+.dnav:disabled{opacity:.4;cursor:default}
+.dlab{position:relative;flex:1;min-width:0;display:flex;align-items:center;justify-content:center;gap:8px;font:600 15px/1.2 var(--f-display);white-space:nowrap;overflow:hidden;cursor:pointer}
+.dlab input{position:absolute;inset:0;opacity:0;width:100%;height:100%;border:0;padding:0;cursor:pointer}
+.dtag{flex:none;padding:2px 8px;border-radius:999px;background:var(--fit-soft);color:var(--fit);font:600 12px/1.4 var(--f-body)}
+.dtoday{flex:none;height:32px;padding:0 10px;border-radius:9px;border:1px solid var(--aom);background:transparent;color:var(--aom);font:600 13.5px/1 var(--f-body);cursor:pointer}
+.dnav:focus-visible,.dtoday:focus-visible,.dlab:focus-within{outline:2px solid var(--aom);outline-offset:2px}
+
+/* overview */
+.home{max-width:760px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:18px 48px;display:flex;flex-direction:column;gap:14px}
+.hi .eyebrow{font-size:13.5px;font-weight:600;letter-spacing:.04em;color:var(--ink-3)}
+.hi h1{margin:0;font:600 clamp(24px,5vw,30px)/1.3 var(--f-display);text-wrap:balance}
+.hi p{margin:2px 0 0;color:var(--ink-2)}
+.pair{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:14px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.card.fit{border-top:4px solid var(--fit)}
+.card.aom{border-top:4px solid var(--aom)}
+.card h2{margin:0;font:600 16px/1.3 var(--f-display);color:var(--ink-2);display:flex;justify-content:space-between;align-items:center;gap:8px}
+.big{font:600 34px/1.1 var(--f-mono);font-variant-numeric:tabular-nums}
+.big small{font:600 15px var(--f-body);color:var(--ink-2);margin-left:4px}
+.sub{color:var(--ink-2);font-size:14.5px;line-height:1.5}
+.left{display:flex;justify-content:space-between;align-items:baseline;gap:8px;padding:8px 12px;border-radius:10px;background:var(--aom-soft);color:var(--good);font-weight:600;font-size:14.5px}
+.left b{font:600 20px/1.2 var(--f-mono);font-variant-numeric:tabular-nums}
+.left.over{background:var(--fit-soft);color:var(--bad)}
+.sub b{color:var(--ink);font-weight:600}
+.track{position:relative;height:8px;border-radius:999px;background:var(--sunk)}
+.track i{position:absolute;left:0;top:0;bottom:0;border-radius:999px;background:var(--fit)}
+.track.aom i{background:var(--aom)}
+.track.over i{background:var(--bad)}
+.track .tick{position:absolute;top:-4px;bottom:-4px;width:2px;background:var(--ink)}
+.ends{display:flex;justify-content:space-between;font-size:12.5px;color:var(--ink-3)}
+.chip{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:999px;font-size:13.5px;font-weight:600;background:var(--sunk);color:var(--ink-2);align-self:flex-start}
+.chip.ok{background:var(--aom-soft);color:var(--good)}
+.chip.fitc{background:var(--fit-soft);color:var(--fit)}
+.chip.warn{background:var(--fit-soft);color:var(--warn)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:40px;padding:8px 14px;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--ink);font:600 15px/1.2 var(--f-body);cursor:pointer;text-decoration:none}
+.btn:hover{background:var(--sunk)}
+.btn.go{margin-top:auto;align-self:flex-start}
+.btn.fit{color:var(--fit)} .btn.aom{color:var(--aom)}
+.btn.primary{background:var(--aom);border-color:var(--aom);color:var(--card)}
+
+/* link card */
+.link h2 .tag{font:600 12.5px var(--f-body);color:var(--ink-3)}
+.duo{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.duo div{min-width:0}
+.duo .lab{font-size:13px;color:var(--ink-3)}
+.duo .val{font:600 20px/1.3 var(--f-mono);font-variant-numeric:tabular-nums}
+
+/* 7 days */
+.week{display:grid;grid-template-columns:auto repeat(7,minmax(0,1fr));gap:6px 4px;align-items:center;font-size:13px}
+.week .rh{color:var(--ink-3);font-weight:600;padding-right:6px;white-space:nowrap}
+.week .dh{text-align:center;color:var(--ink-3);line-height:1.25}
+.week .dh b{display:block;color:var(--ink);font:600 14px var(--f-mono)}
+.week .dh.today b{color:var(--aom)}
+.week .dot{justify-self:center;width:22px;height:22px;border-radius:50%;border:2px solid var(--line)}
+.week .dot.full{background:var(--fit);border-color:var(--fit)}
+.week .dot.part{background:linear-gradient(90deg,var(--fit) 50%,transparent 50%);border-color:var(--fit)}
+.week .dot.skip{border-style:dashed}
+.week .amt{text-align:center;font:500 12.5px var(--f-mono);font-variant-numeric:tabular-nums;color:var(--ink-2);overflow:hidden;text-overflow:ellipsis}
+.week .amt.hi{color:var(--bad);font-weight:600}
+.legend{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:12.5px;color:var(--ink-3)}
+.legend span{display:inline-flex;align-items:center;gap:5px}
+.ld{width:11px;height:11px;border-radius:50%;border:2px solid var(--fit);display:inline-block}
+.ld.full{background:var(--fit)} .ld.part{background:linear-gradient(90deg,var(--fit) 50%,transparent 50%)}
+
+/* coach */
+.ask{display:flex;gap:8px}
+.ask input{flex:1;min-width:0;font:16px/1.4 var(--f-body);color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+.ask input:focus{outline:none;border-color:var(--aom);box-shadow:0 0 0 3px var(--aom-soft)}
+.qs{display:flex;flex-wrap:wrap;gap:6px}
+.qs button{border:1px dashed var(--line);background:transparent;border-radius:999px;padding:6px 11px;font:500 14px var(--f-body);color:var(--ink-2);cursor:pointer}
+.qs button:hover{border-color:var(--aom);color:var(--aom)}
+.out{background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:12px 14px;white-space:pre-wrap;font-size:15.5px;line-height:1.65}
+.note{font-size:13.5px;color:var(--ink-3)}
+.empty{color:var(--ink-3)}
+@media (prefers-reduced-motion:no-preference){.track i{transition:width .5s ease}}
+</style>
+
+<div class="topwrap">
+<nav class="bar" aria-label="สลับแอป">
+  <a class="mark" href="#home" aria-label="โตไลฟ์ หน้าภาพรวม"><i aria-hidden="true"></i><b>โตไลฟ์</b></a>
+  <div class="sw">
+    <a href="#home" data-v="home">ภาพรวม</a>
+    <a href="#fit" data-v="fit">ฟิต</a>
+    <a href="#aom" data-v="aom">ออม</a>
+  </div>
+  <button class="aib" id="aiBtn" type="button" aria-haspopup="dialog" aria-label="ถาม AI"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5l1.9 4.9 4.9 1.9-4.9 1.9L12 17.1l-1.9-4.9-4.9-1.9 4.9-1.9z"/><path d="M18.5 15.5l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8z"/></svg><span>ถาม AI</span></button>
+</nav>
+<div class="dbar" role="group" aria-label="เลือกวันที่">
+  <button class="dnav" id="dPrev" type="button" aria-label="วันก่อนหน้า">‹</button>
+  <label class="dlab" for="dPick"><span id="dTxt">วันนี้</span><span class="dtag" id="dTag" hidden>ย้อนหลัง</span><input type="date" id="dPick" aria-label="เลือกวันที่"></label>
+  <button class="dtoday" id="dToday" type="button" hidden>กลับวันนี้</button>
+  <button class="dnav" id="dNext" type="button" aria-label="วันถัดไป">›</button>
+</div>
+</div>
+
+<main class="home" id="home">
+  <div class="hi">
+    <div class="eyebrow" id="hDate"></div>
+    <h1 id="hHello">สวัสดี</h1>
+    <p id="hSync">กำลังโหลดข้อมูลทั้งสองฝั่ง…</p>
+  </div>
+
+  <div class="pair">
+    <section class="card fit" aria-labelledby="fitH">
+      <h2 id="fitH">ฟิต · น้ำหนักล่าสุด <span class="chip" id="runToday">—</span></h2>
+      <div class="big" id="wNow">—<small>kg</small></div>
+      <div class="sub" id="wSub">ยังไม่มีผลชั่ง บันทึกได้ในแท็บฟิต</div>
+      <div class="track" aria-hidden="true"><i id="wBar" style="width:0"></i></div>
+      <div class="ends"><span id="wStart">เริ่ม</span><span>เป้า 72 kg</span></div>
+      <div class="sub" id="runWeek">สัปดาห์นี้ยังไม่มีการวิ่ง</div>
+      <a class="btn go fit" href="#fit">เปิดฟิต →</a>
+    </section>
+
+    <section class="card aom" aria-labelledby="aomH">
+      <h2 id="aomH">ออม · ใช้จ่ายวันนี้ <span class="chip" id="payChip">—</span></h2>
+      <div class="big" id="spToday">฿0</div>
+      <div class="left" id="spLeft" hidden></div>
+      <div class="sub" id="spCycle">ยังไม่มีรายการ บันทึกได้ในแท็บออม</div>
+      <div class="track aom" aria-hidden="true"><i id="cyBar" style="width:0"></i></div>
+      <div class="ends"><span id="cyStart">วันเงินเดือนออก</span><span id="cyEnd">รอบถัดไป</span></div>
+      <a class="btn go aom" href="#aom">เปิดออม →</a>
+    </section>
+  </div>
+
+  <section class="card link" aria-labelledby="linkH">
+    <h2 id="linkH">กินคลีน กับ งบอาหาร <span class="tag">รอบเงินเดือนนี้</span></h2>
+    <div class="duo">
+      <div><div class="lab">ค่ากินเฉลี่ยต่อวัน</div><div class="val" id="fAvg">—</div></div>
+      <div><div class="lab">งบอาหารต่อวัน</div><div class="val" id="fBud">—</div></div>
+    </div>
+    <div class="track aom" id="fTrack" aria-hidden="true"><i id="fBar" style="width:0"></i></div>
+    <div class="sub" id="fNote">นับเฉพาะรายการหมวด "อาหาร" ในโตออม เทียบกับงบอาหารที่ตั้งไว้</div>
+  </section>
+
+  <section class="card" aria-labelledby="wkH">
+    <h2 id="wkH">7 วันล่าสุด</h2>
+    <div style="overflow-x:auto"><div class="week" id="week"></div></div>
+    <div class="legend"><span><i class="ld full"></i>วิ่งตามแผน</span><span><i class="ld part"></i>ทำบางส่วน</span><span>ตัวเลข = ใช้จ่ายทั้งวัน ไม่รวมผ่อนหนี้ · สีแดง = ค่าใช้จ่ายรายวันเกินงบเฉลี่ย</span></div>
+  </section>
+
+  <section class="card" aria-labelledby="cH">
+    <h2 id="cH">ถามโค้ชโตไลฟ์ <span class="tag" style="font:600 12.5px var(--f-body);color:var(--ink-3)">เห็นข้อมูลทั้งฟิตและออม</span></h2>
+    <form class="ask" id="askForm">
+      <label for="askIn" class="note" hidden>คำถาม</label>
+      <input id="askIn" placeholder="เช่น สัปดาห์นี้ควรปรับอะไรก่อน" autocomplete="off">
+      <button class="btn primary" id="askGo" type="submit">ถาม</button>
+    </form>
+    <div class="qs" id="askQs">
+      <button type="button">สรุปสัปดาห์นี้ทั้งสุขภาพและเงิน</button>
+      <button type="button">เมนูคลีนที่ประหยัดสำหรับรอบเงินเดือนนี้</button>
+      <button type="button">ถ้าอยากซื้อรองเท้าวิ่งใหม่ ควรรอไหม</button>
+    </div>
+    <p class="note" id="askOff" hidden>ใช้ได้เมื่อเปิดหน้านี้ในแอป Claude และอนุญาตให้หน้านี้ใช้ Claude</p>
+  </section>
+</main>
+
+<div id="fitHost" class="app-host" hidden></div>
+<div id="aomHost" class="app-host" hidden></div>
+
+<div class="aiscrim" id="aiSheet" hidden>
+  <section class="aisheet" role="dialog" aria-modal="true" aria-labelledby="aiTitle">
+    <div class="aihead">
+      <div><h2 id="aiTitle">ถามโค้ชโตไลฟ์</h2><p id="aiCtx">เห็นข้อมูลทั้งฟิตและออม</p></div>
+      <button class="btn" id="aiNew" type="button" hidden>เริ่มใหม่</button>
+      <button class="aix" id="aiClose" type="button" aria-label="ปิด">×</button>
+    </div>
+    <div class="ailog" id="aiLog" aria-live="polite"></div>
+    <div class="qs" id="aiQs"></div>
+    <form class="ask" id="aiForm">
+      <label for="aiIn" hidden>คำถาม</label>
+      <input id="aiIn" placeholder="ถามอะไรก็ได้ เรื่องกิน วิ่ง หรือเงิน" autocomplete="off" enterkeyhint="send">
+      <button class="btn primary" type="submit">ส่ง</button>
+    </form>
+    <p class="note" id="aiOff" hidden>ใช้ได้เมื่อเปิดหน้านี้ในแอป Claude และอนุญาตให้หน้านี้ใช้ Claude</p>
+  </section>
+</div>
+
+<template id="fitTpl">{{FIT_TPL}}</template>
+<template id="aomTpl">{{AOM_TPL}}</template>
+
+<script>
+/* ===== โตไลฟ์ shell: seal each app in a shadow root, give it its own document/window/location ===== */
+window.TL=(function(){
+  const hosts={fit:document.getElementById("fitHost"),aom:document.getElementById("aomHost")};
+  const roots={};
+  for(const k of ["fit","aom"]){
+    const r=hosts[k].attachShadow({mode:"open"});
+    r.appendChild(document.getElementById(k+"Tpl").content.cloneNode(true));
+    roots[k]=r;
+  }
+  function mirror(){const t=document.documentElement.getAttribute("data-theme");
+    for(const h of Object.values(hosts)){if(t)h.setAttribute("data-theme",t);else h.removeAttribute("data-theme")}}
+  new MutationObserver(mirror).observe(document.documentElement,{attributes:true,attributeFilter:["data-theme"]});mirror();
+  const bind=(t,p)=>{const v=Reflect.get(t,p);return typeof v==="function"&&/^[a-z]/.test(String(p))?v.bind(t):v};
+  function doc(k){const root=roots[k];
+    return new Proxy(document,{get(t,p){
+      switch(p){
+        case "getElementById":return id=>root.getElementById(id);
+        case "querySelector":return s=>root.querySelector(s);
+        case "querySelectorAll":return s=>root.querySelectorAll(s);
+        case "activeElement":return root.activeElement||document.body;
+        case "addEventListener":return (a,b,c)=>root.addEventListener(a,b,c);
+        case "removeEventListener":return (a,b,c)=>root.removeEventListener(a,b,c);
+        case "body":return root.querySelector(".tl-body")||document.body;
+      }
+      return bind(t,p)}})}
+  function loc(k){
+    let h="";try{h=localStorage.getItem("tl-sub-"+k)||""}catch(e){}
+    const L=[];
+    const o={_l:L,
+      get hash(){return h?"#"+h:""},
+      set hash(v){const n=String(v).replace(/^#/,"");if(n===h){return}h=n;try{localStorage.setItem("tl-sub-"+k,h)}catch(e){}
+        setTimeout(()=>L.forEach(f=>{try{f({type:"hashchange"})}catch(e){console.error(e)}}),0)},
+      get href(){return location.href},get pathname(){return location.pathname},get search(){return ""}};
+    return o}
+  function win(k,l){
+    return new Proxy(window,{get(t,p){
+      if(p==="location")return l;
+      if(p==="addEventListener")return (a,b,c)=>a==="hashchange"?l._l.push(b):window.addEventListener(a,b,c);
+      if(p==="removeEventListener")return (a,b,c)=>{if(a==="hashchange"){const i=l._l.indexOf(b);if(i>=0)l._l.splice(i,1)}else window.removeEventListener(a,b,c)};
+      return bind(t,p)}})}
+  const env={};
+  for(const k of ["fit","aom"]){const l=loc(k);env[k]={document:doc(k),window:win(k,l),location:l};
+    /* in-app links like href="#debt" switch the app's own view, never the outer page */
+    roots[k].addEventListener("click",e=>{const a=e.composedPath().find(n=>n&&n.tagName==="A");if(!a)return;
+      const h=a.getAttribute("href")||"";if(h.startsWith("#")&&h.length>1){e.preventDefault();l.hash=h}},true)}
+  /* shared selected date */
+  const day0=()=>{const d=new Date();d.setHours(0,0,0,0);return d};
+  const D0={date:day0(),ls:[]};
+  return {hosts,roots,env,
+    get date(){return new Date(D0.date)},
+    isToday(){return +D0.date===+day0()},
+    dayWord(){if(+D0.date===+day0())return "วันนี้";const d=D0.date;return "วันที่ "+d.getDate()+" "+["ม.ค.","ก.พ.","มี.ค.","เม.ย.","พ.ค.","มิ.ย.","ก.ค.","ส.ค.","ก.ย.","ต.ค.","พ.ย.","ธ.ค."][d.getMonth()]+" "},
+    setDate(d,from){const n=new Date(d);n.setHours(0,0,0,0);if(isNaN(n)||+n===+D0.date)return;D0.date=n;D0.ls.forEach(f=>{try{f(n,from)}catch(e){console.error(e)}})},
+    onDate(f){D0.ls.push(f)},
+    _day0:day0};
+})();
+TL.fromFit=d=>TL.setDate(d,"fit");
+</script>
+<script>
+(function(document,window,location){
+{{FIT_JS}}
+}).call(window,TL.env.fit.document,TL.env.fit.window,TL.env.fit.location);
+</script>
+<script>
+(function(document,window,location){
+{{AOM_JS}}
+}).call(window,TL.env.aom.document,TL.env.aom.window,TL.env.aom.location);
+</script>
+<script>
+/* ===== โตไลฟ์ overview ===== */
+(function(){
+const $=id=>document.getElementById(id);
+const VIEWS=["home","fit","aom"];
+const homeEl=$("home"),hosts=TL.hosts;
+let view="";
+function route(){
+  const h=location.hash.slice(1),v=VIEWS.includes(h)?h:"home";
+  const changed=v!==view;view=v;
+  homeEl.hidden=v!=="home";hosts.fit.hidden=v!=="fit";hosts.aom.hidden=v!=="aom";
+  document.querySelectorAll(".sw a").forEach(a=>{if(a.dataset.v===v)a.setAttribute("aria-current","page");else a.removeAttribute("aria-current")});
+  if(changed){window.scrollTo(0,0);setTimeout(()=>window.dispatchEvent(new Event("resize")),30)}
+  if(v==="home")render();
+}
+window.addEventListener("hashchange",route);
+
+/* ---- dates ---- */
+const pad=n=>String(n).padStart(2,"0");
+const iso=d=>d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());
+const addD=(d,n)=>{const x=new Date(d);x.setDate(x.getDate()+n);return x};
+const DN=["อาทิตย์","จันทร์","อังคาร","พุธ","พฤหัสบดี","ศุกร์","เสาร์"],DS=["อา","จ","อ","พ","พฤ","ศ","ส"];
+const MN=["ม.ค.","ก.พ.","มี.ค.","เม.ย.","พ.ค.","มิ.ย.","ก.ค.","ส.ค.","ก.ย.","ต.ค.","พ.ย.","ธ.ค."];
+const thD=d=>d.getDate()+" "+MN[d.getMonth()];
+const baht=n=>"฿"+Math.round(n).toLocaleString("th-TH");
+const kg=n=>(+n).toFixed(1);
+
+/* ---- data ---- */
+const H={runs:{},weights:[],aom:{},ready:{fit:false,aom:false},db:null};
+const GOAL=72;
+
+/* same pay-cycle rule as ออม: a cycle starts on the day salary was recorded (day 15+), else on the set pay day */
+function cycle(today,payDay){
+  const v=payDay;const pd=v===undefined||v===null||v===""?25:Math.max(0,Math.min(31,Math.round(+v||0)));
+  if(!pd)return {start:new Date(today.getFullYear(),today.getMonth(),1),next:new Date(today.getFullYear(),today.getMonth()+1,1)};
+  const at=(y,m)=>{const dt=new Date(y,m,1),k=dt.getFullYear()+"-"+pad(dt.getMonth()+1),b=H.aom["tx-"+k];
+    const days=(b&&Array.isArray(b.items)?b.items:[]).filter(i=>i.type==="in"&&i.cat==="salary"&&i.date&&+i.date.slice(8,10)>=15).map(i=>+i.date.slice(8,10));
+    return new Date(dt.getFullYear(),dt.getMonth(),days.length?Math.min(...days):Math.min(pd,new Date(dt.getFullYear(),dt.getMonth()+1,0).getDate()))};
+  let start=at(today.getFullYear(),today.getMonth());if(today<start)start=at(today.getFullYear(),today.getMonth()-1);
+  return {start,next:at(start.getFullYear(),start.getMonth()+1)};
+}
+const DAILY=["food","fun","travel","shop","other"];
+const monthlyOf=l=>{const a=+l.amt||0;return l.per==="y"?a/12:l.per==="t"?a*2/12:a};
+function txItems(){
+  const out=[];
+  for(const [id,d] of Object.entries(H.aom)){if(d&&d.kind==="tx"&&Array.isArray(d.items))out.push(...d.items)}
+  return out.filter(t=>t&&t.type==="out"&&t.date);
+}
+const NOSPEND=new Set(["debt"]);
+function spendOf(list){return list.filter(x=>!NOSPEND.has(x.cat)).reduce((a,x)=>a+(+x.amt||0),0)}
+function debtOf(list){return list.filter(x=>x.cat==="debt").reduce((a,x)=>a+(+x.amt||0),0)
+}
+function foodBudgetMonthly(s){
+  if(!s||!Array.isArray(s.living))return 0;
+  return s.living.filter(x=>x.cat==="food").reduce((a,x)=>a+monthlyOf(x),0);
+}
+function dailyPool(s){
+  if(!s||!Array.isArray(s.living))return 0;
+  return s.living.filter(x=>DAILY.includes(x.cat)).reduce((a,x)=>a+monthlyOf(x),0);
+}
+function summary(){
+  const today=TL.date;
+  const t=iso(today),s=H.aom.settings||{};
+  const W=H.weights.slice().sort((a,b)=>a[0]<b[0]?-1:1);
+  const wNow=W.length?+W[W.length-1][1]:null,wStart=W.length?+W[0][1]:null;
+  const mon=addD(today,-((today.getDay()+6)%7));
+  let wk={n:0,km:0,min:0};
+  for(let i=0;i<7;i++){const r=H.runs[iso(addD(mon,i))];if(r&&(r.done==="1"||r.done==="2")){wk.n++;wk.km+=+r.km||0;wk.min+=+r.min||0}}
+  const tx=txItems();
+  const {start,next}=cycle(today,s.payDay);
+  const inCy=tx.filter(x=>x.date>=iso(start)&&x.date<iso(next));
+  const spentCy=spendOf(inCy),debtCy=debtOf(inCy);
+  const foodCy=inCy.filter(x=>x.cat==="food").reduce((a,x)=>a+(+x.amt||0),0);
+  const daysIn=Math.round((today-start)/864e5)+1,daysLeft=Math.max(1,Math.round((next-today)/864e5)),cyLen=Math.round((next-start)/864e5);
+  const todayTx=tx.filter(x=>x.date===t);
+  const pool=dailyPool(s),dailyBefore=inCy.filter(x=>DAILY.includes(x.cat)&&x.date<t).reduce((a,x)=>a+(+x.amt||0),0);
+  const dayBud=pool?Math.max(0,(pool-dailyBefore)/daysLeft):0,dayAvgBud=pool&&cyLen?pool/cyLen:0;
+  return {today,t,s,W,wNow,wStart,mon,wk,tx,start,next,spentCy,debtCy,foodCy,daysIn,daysLeft,cyLen,todayTx,
+    spentToday:spendOf(todayTx),foodBudM:foodBudgetMonthly(s),dayBud,dayAvgBud,runToday:H.runs[t]};
+}
+
+/* ---- render ---- */
+function render(){
+  const C=summary(),{today}=C;
+  const hr=new Date().getHours(),isT=TL.isToday();
+  const nick=(C.s&&C.s.nick)||"โต";
+  $("hDate").textContent=DN[today.getDay()]+" "+today.getDate()+" "+MN[today.getMonth()]+" "+(today.getFullYear()+543);
+  $("hHello").textContent=isT?(hr<11?"สวัสดีตอนเช้า ":hr<16?"สวัสดีตอนบ่าย ":"สวัสดีตอนเย็น ")+nick:"ย้อนดูวันที่ "+thD(today)+" "+(today.getFullYear()+543);
+  const W=TL.dayWord();
+  $("aomH").firstChild.textContent="ออม · ใช้จ่าย"+W.trim()+" ";
+  if(!H.db){$("hSync").textContent="เปิดผ่านแอป Claude เพื่อดึงข้อมูลจากฟิตและออม";}
+  else if(!(H.ready.fit&&H.ready.aom)){$("hSync").textContent="กำลังโหลดข้อมูลทั้งสองฝั่ง…"}
+  else $("hSync").textContent="ข้อมูลฟิตและออมอัปเดตล่าสุดแล้ว";
+
+  /* fit */
+  const rt=C.runToday;
+  const chip=$("runToday");
+  const dw=isT?"วันนี้":"วันนั้น";
+  if(rt&&rt.done==="1"){chip.textContent=dw+"วิ่งแล้ว ✓";chip.className="chip ok"}
+  else if(rt&&rt.done==="2"){chip.textContent=dw+"ทำบางส่วน";chip.className="chip fitc"}
+  else if(rt&&rt.done==="3"){chip.textContent=dw+"ข้าม";chip.className="chip"}
+  else{chip.textContent=dw+"ยังไม่บันทึก";chip.className="chip"}
+  if(C.wNow!=null){
+    $("wNow").innerHTML=kg(C.wNow)+"<small>kg</small>";
+    const lost=C.wStart-C.wNow,left=C.wNow-GOAL;
+    $("wSub").innerHTML=(lost>0?"ลดแล้ว <b>"+kg(lost)+" kg</b> จาก "+kg(C.wStart):"เริ่มต้นที่ "+kg(C.wStart)+" kg")+" · อีก <b>"+kg(Math.max(0,left))+" kg</b> ถึงเป้า";
+    const p=C.wStart>GOAL?Math.min(1,Math.max(0,(C.wStart-C.wNow)/(C.wStart-GOAL))):0;
+    $("wBar").style.width=(p*100).toFixed(1)+"%";
+    $("wStart").textContent="เริ่ม "+kg(C.wStart)+" kg";
+  }
+  $("runWeek").innerHTML=C.wk.n?"สัปดาห์นี้วิ่ง <b>"+C.wk.n+" ครั้ง</b> · <b>"+C.wk.km.toFixed(1)+" กม.</b> · "+C.wk.min+" นาที":"สัปดาห์นี้ยังไม่มีการวิ่ง";
+
+  /* money */
+  $("spToday").textContent=baht(C.spentToday);
+  const sl=$("spLeft");
+  if(C.dayBud>0){const lf=C.dayBud-C.spentToday;sl.hidden=false;sl.className="left"+(lf<0?" over":"");
+    sl.innerHTML="<span>"+(lf>=0?"เหลือใช้ได้"+W:"เกินงบ"+W)+"</span><b>"+baht(Math.abs(lf))+"</b>"}
+  else sl.hidden=true;
+  const pc=$("payChip");
+  pc.textContent="อีก "+C.daysLeft+" วันเงินเดือนออก";pc.className="chip ok";
+  if(C.tx.length||H.ready.aom){
+    $("spCycle").innerHTML="รอบนี้ใช้จ่าย <b>"+baht(C.spentCy)+"</b> ใน "+C.daysIn+" วัน"+(C.dayBud?" · งบวันนี้ "+baht(C.dayBud):"")+(C.debtCy?" · ผ่อนหนี้แล้ว "+baht(C.debtCy):"");
+  }
+  $("cyBar").style.width=(Math.min(1,C.daysIn/C.cyLen)*100).toFixed(1)+"%";
+  $("cyStart").textContent=thD(C.start);$("cyEnd").textContent=thD(addD(C.next,-1));
+
+  /* link: food */
+  const days=Math.max(1,C.daysIn),avg=C.foodCy/days,bud=C.cyLen?C.foodBudM/C.cyLen:0;
+  $("fAvg").textContent=C.foodCy?baht(avg):"—";
+  $("fBud").textContent=bud?baht(bud):"ยังไม่ตั้ง";
+  const tr=$("fTrack");
+  if(bud&&C.foodCy){
+    const r=avg/bud;$("fBar").style.width=Math.min(100,r*100).toFixed(1)+"%";tr.classList.toggle("over",r>1);
+    $("fNote").textContent=r<=1
+      ?"อยู่ในงบ เหลือเผื่อวันละ "+baht(bud-avg)+" · อกไก่กับไข่ต้มเตรียมเองช่วยให้ทั้งน้ำหนักและงบไปทางเดียวกัน"
+      :"เกินงบวันละ "+baht(avg-bud)+" · ลองเพิ่มวันที่เตรียมอกไก่และไข่ต้มเอง จะได้ทั้งคุมแคลอรีและคุมเงิน";
+  }else{$("fBar").style.width="0";tr.classList.remove("over");
+    $("fNote").textContent=bud?"ยังไม่มีรายการหมวดอาหารในรอบนี้ บันทึกในออมแล้วตัวเลขจะขึ้นที่นี่":"ตั้งงบ \"อาหาร / กับข้าว\" ในออม เพื่อเทียบค่ากินกับงบ"}
+
+  /* week strip */
+  const wk=$("week");let h='<div></div>';
+  const days7=Array.from({length:7},(_,i)=>addD(today,i-6));
+  days7.forEach(d=>{h+=`<div class="dh${iso(d)===C.t?" today":""}">${DS[d.getDay()]}<b>${d.getDate()}</b></div>`});
+  h+='<div class="rh">วิ่ง</div>';
+  days7.forEach(d=>{const r=H.runs[iso(d)]||{};const c=r.done==="1"?"full":r.done==="2"?"part":r.done==="3"?"skip":"";
+    const lbl=r.done==="1"?"วิ่งตามแผน":r.done==="2"?"ทำบางส่วน":r.done==="3"?"ข้าม":"ไม่มีบันทึก";
+    h+=`<div class="dot ${c}" title="${lbl}" aria-label="${thD(d)} ${lbl}"></div>`});
+  h+='<div class="rh">จ่าย</div>';
+  days7.forEach(d=>{const k=iso(d),dl=C.tx.filter(x=>x.date===k),a=spendOf(dl),da=dl.filter(x=>DAILY.includes(x.cat)).reduce((s,x)=>s+(+x.amt||0),0);
+    h+=`<div class="amt${C.dayAvgBud&&da>C.dayAvgBud?" hi":""}">${a?Math.round(a).toLocaleString("th-TH"):"·"}</div>`});
+  wk.innerHTML=h;
+}
+
+/* ---- coach ---- */
+let sampleFn=null,ctl=null;
+function context(){
+  const C=summary();
+  const runs=Object.entries(H.runs).filter(([k])=>k>=iso(addD(C.today,-20))).sort().map(([k,r])=>({date:k,done:{1:"ตามแผน",2:"บางส่วน",3:"ข้าม"}[r.done]||"",min:r.min,km:r.km,hr:r.hr,feel:r.feel}));
+  const tx=C.tx.filter(x=>x.date>=iso(C.start)).map(x=>({date:x.date,amt:x.amt,cat:x.cat,note:x.note}));
+  return {
+    วันนี้:C.t,ชื่อเล่น:(C.s.nick||"โต"),
+    สุขภาพ:{น้ำหนักล่าสุด:C.wNow,น้ำหนักเริ่ม:C.wStart,เป้า:GOAL,ประวัติชั่ง:C.W.slice(-10),การวิ่ง20วัน:runs,โซนชีพจรเป้า:"135-145",แผน:"วิ่งสลับเดิน 12 สัปดาห์ ออกวิ่ง 4:45 วิ่งยาววันเสาร์ กิน 2 มื้อ 10:00 และบ่ายแก่"},
+    เงิน:{วันเงินเดือนออก:C.s.payDay,รอบเริ่ม:iso(C.start),รอบถัดไป:iso(C.next),ใช้จ่ายรอบนี้ไม่รวมหนี้:Math.round(C.spentCy),ผ่อนหนี้รอบนี้:Math.round(C.debtCy),ค่าอาหารรอบนี้:Math.round(C.foodCy),งบอาหารต่อเดือน:Math.round(C.foodBudM),งบใช้จ่ายรายวัน:Math.round(C.dayBud),รายการรอบนี้:tx.slice(-60)}
+  };
+}
+const VIEW_TH={home:"ภาพรวม",fit:"ฟิต",aom:"ออม"};
+const AOM_TH={overview:"ภาพรวม",debt:"ปลดหนี้",ledger:"รับ-จ่าย",goals:"เป้าออม",retire:"เกษียณ",learn:"ความรู้"};
+const CHIPS={
+  home:["สรุปวันนี้ทั้งสุขภาพและเงิน","สัปดาห์นี้ควรปรับอะไรก่อน","เมนูคลีนที่ประหยัดสำหรับรอบเงินเดือนนี้"],
+  fit:["มื้อต่อไปควรกินอะไร ให้โปรตีนพอและไม่เกินงบ","การวิ่งสัปดาห์นี้หนักไปหรือเบาไป","น้ำหนักลงช้า ควรปรับตรงไหน"],
+  aom:["เงินที่เหลือวันนี้ ใช้ยังไงดี","หนี้ก้อนไหนควรโปะก่อน","รอบนี้ใช้เงินหมวดไหนเกิน"]
+};
+let turns=[];
+function subView(){try{if(view==="aom"){const h=TL.env.aom.location.hash.slice(1)||"overview";return AOM_TH[h]||h}}catch(e){}return ""}
+function context(){
+  const C=summary();
+  const runs=Object.entries(H.runs).filter(([k])=>k>=iso(addD(C.today,-20))).sort().map(([k,r])=>({date:k,done:{1:"ตามแผน",2:"บางส่วน",3:"ข้าม"}[r.done]||"",min:r.min,km:r.km,hr:r.hr,feel:r.feel}));
+  const tx=C.tx.filter(x=>x.date>=iso(C.start)).map(x=>({date:x.date,amt:x.amt,cat:x.cat,note:x.note}));
+  const d=H.day||{},meals=[];
+  Object.entries(d.a||{}).forEach(([k,v])=>meals.push({มื้อ:k==="s"?"รองท้อง":"มื้อที่"+(+k+1),เมนู:v.d||"",kcal:v.k,โปรตีน:v.p}));
+  (d.x||[]).forEach(x=>meals.push({มื้อ:"นอกแผน",เมนู:x.d,kcal:x.k,โปรตีน:x.p}));
+  const debts=Object.values(H.aom).filter(x=>x&&x.kind==="debt"&&+x.balance>0).map(x=>({ชื่อ:x.name,คงเหลือ:Math.round(x.balance),ดอกเบี้ย:x.rate,ค่างวด:x.minPay}));
+  const goals=Object.values(H.aom).filter(x=>x&&x.kind==="goal").map(x=>({ชื่อ:x.name,เป้า:x.target,ออมแล้ว:x.saved,กำหนด:x.deadline}));
+  return {
+    วันนี้:C.t,ชื่อเล่น:(C.s.nick||"โต"),หน้าที่เปิดอยู่:VIEW_TH[view]+(subView()?" > "+subView():""),
+    สุขภาพ:{น้ำหนักล่าสุด:C.wNow,น้ำหนักเริ่ม:C.wStart,เป้า:GOAL,ประวัติชั่ง:C.W.slice(-10),การวิ่ง20วัน:runs,อาหารที่บันทึกวันนี้:meals,โซนชีพจรเป้า:"135-145",แผน:"วิ่งสลับเดิน 12 สัปดาห์ ออกวิ่ง 4:45 วิ่งยาววันเสาร์ กิน 2 มื้อ 10:00 และบ่ายแก่ ทำอกไก่ ไข่ต้มกินเองเพื่อประหยัด"},
+    เงิน:{วันเงินเดือนออก:C.s.payDay,รอบเริ่ม:iso(C.start),รอบถัดไป:iso(C.next),ใช้วันนี้:Math.round(C.spentToday),งบวันนี้:Math.round(C.dayBud),เหลือใช้ได้วันนี้:Math.round(C.dayBud-C.spentToday),ใช้จ่ายรอบนี้ไม่รวมหนี้:Math.round(C.spentCy),ผ่อนหนี้รอบนี้:Math.round(C.debtCy),ค่าอาหารรอบนี้:Math.round(C.foodCy),งบอาหารต่อเดือน:Math.round(C.foodBudM),หนี้:debts,เป้าออม:goals,รายการรอบนี้:tx.slice(-60)}
+  };
+}
+const sheet=$("aiSheet"),log=$("aiLog");
+let lastFocus=null;
+function bubble(cls,text){const el=document.createElement("div");el.className="msg "+cls;el.textContent=text;log.appendChild(el);log.scrollTop=log.scrollHeight;return el}
+function renderChips(){$("aiQs").innerHTML=(CHIPS[view]||CHIPS.home).map(q=>`<button type="button">${q}</button>`).join("");$("aiQs").hidden=!sampleFn}
+function openCoach(q){
+  lastFocus=document.activeElement;
+  $("aiCtx").textContent="กำลังดู: "+VIEW_TH[view]+(subView()?" · "+subView():"")+" · เห็นข้อมูลทั้งฟิตและออม";
+  renderChips();
+  if(!log.children.length){const h=document.createElement("p");h.className="hello";h.textContent=sampleFn?"ถามได้ทุกเรื่องที่เกี่ยวกับการกิน การวิ่ง น้ำหนัก และเงินของคุณ โค้ชเห็นข้อมูลล่าสุดของทั้งสองฝั่ง":"";log.appendChild(h)}
+  sheet.hidden=false;document.documentElement.style.overflow="hidden";
+  if(q)ask(q);else setTimeout(()=>$("aiIn").focus(),60);
+}
+function closeCoach(){sheet.hidden=true;document.documentElement.style.overflow="";if(lastFocus&&lastFocus.focus)try{lastFocus.focus()}catch(e){}}
+async function ask(q){
+  q=(q||"").trim();if(!q)return;
+  if(!sampleFn){$("aiOff").hidden=false;return}
+  $("aiIn").value="";bubble("u",q);const out=bubble("a wait","กำลังคิด…");$("aiNew").hidden=false;
+  if(ctl)ctl.abort();ctl=new AbortController();
+  const intro="คุณคือโค้ชประจำแอป \"โตไลฟ์\" ที่ดูแลทั้งสุขภาพ (ลดน้ำหนัก วิ่ง อาหาร) และการเงินส่วนตัวของผู้ใช้คนเดียว\n"+
+    "ตอบเป็นภาษาไทย กระชับ ไม่เกิน 8 บรรทัด ใช้ขีดนำหน้าแต่ละข้อได้ ไม่ใช้ตัวหนาหรือหัวข้อ markdown ให้คำแนะนำที่ทำได้จริงจากข้อมูลจริงด้านล่าง ตอบเรื่องที่เกี่ยวกับหน้าที่ผู้ใช้เปิดอยู่เป็นหลัก และชี้จุดที่สุขภาพกับเงินเชื่อมกันเมื่อเกี่ยวข้อง\n"+
+    "ไม่ต้องทวนข้อมูลทั้งหมด ไม่วินิจฉัยโรค เรื่องการลงทุนหรือกู้เงินให้ข้อมูลประกอบการตัดสินใจ ไม่ฟันธง ถ้าข้อมูลไม่พอให้บอกสั้นๆ ว่าควรบันทึกอะไรเพิ่ม\n\nข้อมูลล่าสุด (JSON):\n"+JSON.stringify(context());
+  turns.push({role:"user",content:(turns.length?"(ข้อมูลล่าสุด หน้าที่เปิด: "+context().หน้าที่เปิดอยู่+")\n":intro+"\n\nคำถาม: ")+q});
+  if(turns.length>9)turns=[turns[0]].concat(turns.slice(-8));
+  try{
+    const r=await sampleFn(turns,{signal:ctl.signal,cache:false,modelTier:"default",onText:({text})=>{out.classList.remove("wait");out.textContent=text;log.scrollTop=log.scrollHeight}});
+    out.classList.remove("wait");out.textContent=r.text||out.textContent;turns.push({role:"assistant",content:out.textContent});
+  }catch(e){
+    turns.pop();
+    if(e&&e.name==="AbortError"){out.remove();return}
+    out.classList.remove("wait");
+    if(e&&e.code==="not_granted"){out.remove();$("aiOff").hidden=false;return}
+    out.textContent=e&&e.code==="rate_limited"?"ถามถี่ไปนิด รอสักครู่แล้วลองใหม่":"ตอบไม่สำเร็จ ลองใหม่อีกครั้ง";
+  }
+}
+$("aiBtn").addEventListener("click",()=>openCoach());
+$("aiClose").addEventListener("click",closeCoach);
+sheet.addEventListener("click",e=>{if(e.target===sheet)closeCoach()});
+document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!sheet.hidden)closeCoach()});
+$("aiNew").addEventListener("click",()=>{if(ctl)ctl.abort();turns=[];log.innerHTML="";$("aiNew").hidden=true;openCoach()});
+$("aiForm").addEventListener("submit",e=>{e.preventDefault();ask($("aiIn").value)});
+$("aiQs").addEventListener("click",e=>{const b=e.target.closest("button");if(b)ask(b.textContent)});
+$("askForm").addEventListener("submit",e=>{e.preventDefault();const v=$("askIn").value.trim();$("askIn").value="";openCoach(v)});
+$("askQs").addEventListener("click",e=>{const b=e.target.closest("button");if(b)openCoach(b.textContent)});
+
+/* ---- connect ---- */
+(async()=>{
+  let db=null,user=null;
+  try{db=await window.claude?.use?.("db")}catch(e){db=null}
+  H.db=db;
+  try{sampleFn=await window.claude?.use?.("sample")}catch(e){sampleFn=null}
+  if(!sampleFn){$("askForm").hidden=true;$("askQs").hidden=true;$("askOff").hidden=false;$("aiForm").hidden=true;$("aiOff").hidden=false}
+  if(!db){render();return}
+  const tm=setTimeout(()=>{if(!(H.ready.fit&&H.ready.aom)){$("hSync").textContent="โหลดข้อมูลช้ากว่าปกติ ข้อมูลที่แสดงอาจยังไม่ครบ"}},10000);
+  db.collection("runs").onSnapshot(s=>{const m={};s.docs.forEach(d=>{const v=d.data();if(v)m[d.id]=v});H.runs=m;H.ready.fit=true;if(view==="home")render()},()=>{});
+  let unDay=null;
+  const subDay=()=>{try{unDay&&unDay()}catch(e){}H.day=null;unDay=db.doc("days/"+iso(TL.date)).onSnapshot(s=>{H.day=s.exists?s.data():null},()=>{})};
+  subDay();TL.onDate(subDay);
+  db.doc("meta/weights").onSnapshot(s=>{H.weights=(s.exists&&s.data().list)||[];if(view==="home")render()},()=>{});
+  try{user=await window.claude.use("user")}catch(e){user=null}
+  const id=user&&typeof user.id==="function"?await user.id().catch(()=>null):null;
+  if(id){
+    db.collection("data/users/"+id).onSnapshot(s=>{const m={};s.docs.forEach(d=>{const v=d.data();if(v)m[d.id]=v});H.aom=m;H.ready.aom=true;if(view==="home")render()},()=>{});
+  }else H.ready.aom=true;
+  render();
+})();
+
+/* ---- date bar ---- */
+const MAXF=14;
+function paintDate(){
+  const d=TL.date,t0=TL._day0(),isT=+d===+t0;
+  $("dTxt").textContent=(isT?"วันนี้ · ":"")+DN[d.getDay()]+" "+d.getDate()+" "+MN[d.getMonth()]+" "+(d.getFullYear()+543);
+  $("dTag").hidden=!(d<t0);$("dTag").textContent="ย้อนหลัง";
+  if(d>t0){$("dTag").hidden=false;$("dTag").textContent="ล่วงหน้า"}
+  $("dToday").hidden=isT;
+  $("dNext").disabled=(d-t0)/864e5>=MAXF;
+  $("dPick").value=iso(d);$("dPick").max=iso(addD(t0,MAXF));
+}
+TL.onDate((d,from)=>{
+  paintDate();
+  if(from!=="fit"&&TL.fitDate)TL.fitDate(d);
+  if(TL.aomRefresh)TL.aomRefresh();
+  if(view==="home")render();
+});
+$("dPrev").onclick=()=>TL.setDate(addD(TL.date,-1));
+$("dNext").onclick=()=>TL.setDate(addD(TL.date,1));
+$("dToday").onclick=()=>TL.setDate(TL._day0());
+$("dPick").addEventListener("change",e=>{const v=e.target.value;if(v){const[y,m,dd]=v.split("-").map(Number);TL.setDate(new Date(y,m-1,dd))}});
+let lastDay=+TL._day0();
+setInterval(()=>{const t=+TL._day0();if(t!==lastDay){const was=+TL.date===lastDay;lastDay=t;if(was)TL.setDate(new Date(t));else paintDate()}},30000);
+paintDate();
+
+route();
+})();
+</script>
