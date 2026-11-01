@@ -54,6 +54,7 @@ for k in ["FIT", "AOM"]:
         js = patches.patch_fit_eat_toggle(js)
         js = patches.patch_fit_totals_fix(js)
         js = patches.patch_fit_expose_kcal(js)
+        js = patches.patch_fit_no_weekly_shop(js)
     else:
         js = patches.patch_aom_js(js)
         css = patches.patch_aom_css(css)

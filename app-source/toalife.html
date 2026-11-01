@@ -2102,7 +2102,7 @@ function renderPrep(k){
   if(!nd||!nd.days){el.hidden=true;return}
   el.hidden=false;const dd=S.days[k]||{};
   let html="";
-  if(wd===6){const wk=needs(addD(cur,1),7),wb=dd.wb||[];
+  if(false){const wk=needs(addD(cur,1),7),wb=dd.wb||[];
     const buy=["ไข่ไก่ "+(wk.egg+4)+" ฟอง (ประมาณ "+Math.ceil((wk.egg+4)/30)+" แผง)","อกไก่ดิบ "+kgRaw(wk.box)+" kg","นมถั่วเหลืองไม่หวาน "+wk.milk+" กล่อง (สูตรน้ำตาล 0% ซื้อแพ็ก)"];
     if(wk.fish)buy.push("ปลาทู "+wk.fish+" ตัว");if(wk.can)buy.push("ปลากระป๋อง "+wk.can+" กระป๋อง");if(wk.ban)buy.push("กล้วย "+wk.ban+" ลูก");
     buy.push("ผักลวก/แตงกวา/ผักสด สำหรับ "+wk.veg+" มื้อ","น้ำพริก 1 กระปุก (ดูฉลาก ไม่มีกุ้ง กุ้งแห้ง กะปิ) · ข้าวสาร (เช็กว่าพอไหม)");

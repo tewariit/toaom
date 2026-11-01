@@ -269,3 +269,8 @@ def patch_fit_expose_kcal(js):
     # let the overview read eaten calories per day
     return rep(js, 'if(typeof TL!=="undefined")TL.fitDate=',
                'if(typeof TL!=="undefined")TL.fitKcal=k=>{try{const t=dayTotals(k,plan(parse(k)));return {k:t.EK,p:t.EP,goal:1800,pGoal:140,any:!!S.days[k]}}catch(e){return null}};\nif(typeof TL!=="undefined")TL.fitDate=')
+
+
+def patch_fit_no_weekly_shop(js):
+    # drop the Sunday "ซื้อของประจำสัปดาห์" list; keep the meal-prep part
+    return rep(js, 'if(wd===6){const wk=needs(addD(cur,1),7),wb=dd.wb||[];', 'if(false){const wk=needs(addD(cur,1),7),wb=dd.wb||[];')
