@@ -52,6 +52,7 @@ for k in ["FIT", "AOM"]:
         js = patches.patch_fit_photo_js(js)
         js, body, css = patches.patch_fit_burn(js, body, css)
         js = patches.patch_fit_eat_toggle(js)
+        js = patches.patch_fit_totals_fix(js)
     else:
         js = patches.patch_aom_js(js)
         css = patches.patch_aom_css(css)

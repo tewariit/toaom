@@ -1997,7 +1997,7 @@ function shopList(p){
 const dayScore=k=>{const n=items(plan(parse(k))).length,c=((S.days[k]||{}).c||[]).length;return [Math.min(c,n),n]};
 function dayTotals(k,p){
   const dd=S.days[k]||{},a=dd.a||{};let K=0,P=0;
-  const nn=dd.n||{},c=dd.c||[];let EK=0,EP=0;p.rows.forEach((r,i)=>{if(nn[i])return;const e=a[i]||est(r.text);K+=+e.k||0;P+=+e.p||0;if(c.includes(i)){EK+=+e.k||0;EP+=+e.p||0}});
+  const nn=dd.n||{},c=dd.c||[];let EK=0,EP=0;p.rows.forEach((r,i)=>{if(nn[i])return;const e=a[i]||est(r.text);K+=+e.k||0;P+=+e.p||0;if(c.includes(mealIdx(p,i))){EK+=+e.k||0;EP+=+e.p||0}});
   const se=nn.s?{k:0,p:0}:a.s||est(snackOf(k,p.snack));K+=+se.k||0;P+=+se.p||0;if(!nn.s&&c.includes(snackIdx(p))){EK+=+se.k||0;EP+=+se.p||0}
   (dd.x||[]).forEach(x=>{K+=+x.k||0;P+=+x.p||0;EK+=+x.k||0;EP+=+x.p||0});
   return {K,P,EK,EP};

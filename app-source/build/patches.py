@@ -257,3 +257,9 @@ def patch_fit_eat_toggle(js):
     js = rep(js, 'q("[data-eatsnack]").forEach(b=>b.onclick=()=>{toggleIdx(k,snackIdx(p));saveDay(k);render()});',
              'q("[data-eatsnack]").forEach(b=>b.onclick=()=>{const dd=day(k);if(dd.n)delete dd.n.s;toggleIdx(k,snackIdx(p));saveDay(k);render()});')
     return js
+
+
+def patch_fit_totals_fix(js):
+    # a meal counts as eaten only when its own checklist item is ticked (was compared by row number)
+    return rep(js, 'K+=+e.k||0;P+=+e.p||0;if(c.includes(i)){EK+=+e.k||0;EP+=+e.p||0}',
+               'K+=+e.k||0;P+=+e.p||0;if(c.includes(mealIdx(p,i))){EK+=+e.k||0;EP+=+e.p||0}')
