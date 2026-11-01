@@ -188,3 +188,31 @@ header{align-items:center}
 def patch_fit_layout_js(js):
     return rep(js, '$("prog").innerHTML=dayNo<1?"เริ่มแผน<br>อีก "+(1-dayNo)+" วัน":"วันที่ "+dayNo+"<br>ของแผน";',
                '$("prog").innerHTML=dayNo<1?"เริ่มแผนอีก "+(1-dayNo)+" วัน":"วันที่ "+dayNo+" ของแผน";')
+
+
+# ---------- save meal photos to the device ----------
+PHOTO_SAVE_JS = r'''
+async function savePhoto(id,name,btn){
+  if(!id)return;const old=btn.textContent;btn.disabled=true;btn.textContent="กำลังเตรียมรูป…";
+  try{
+    const dl=await window.claude?.use?.("downloads");
+    const blob=await (await fetch("/_blob/"+id)).blob();
+    if(!dl)throw {code:"unavailable"};
+    await dl.save({filename:name+".jpg",data:blob});btn.textContent="บันทึกแล้ว ✓";
+  }catch(e){btn.textContent=e&&e.code==="declined"?old:"บันทึกไม่สำเร็จ ลองใหม่"}
+  finally{btn.disabled=false;setTimeout(()=>{btn.textContent=old},2500)}
+}
+'''
+
+
+def patch_fit_photo_js(js):
+    js = rep(js, 'function renderMeals(k,p){', PHOTO_SAVE_JS + 'function renderMeals(k,p){', 1)
+    js = rep(js, '${assets&&ph[i]?`<button class="chipbtn" data-rmphoto="${i}">ลบรูป</button>`:""}',
+             '${ph[i]?`<button class="chipbtn" data-savephoto="${esc(ph[i])}" data-pname="อาหาร-${k}-มื้อ${i+1}">บันทึกรูป</button>`:""}${assets&&ph[i]?`<button class="chipbtn" data-rmphoto="${i}">ลบรูป</button>`:""}')
+    js = rep(js, '${assets&&ph.s?`<button class="chipbtn" data-rmphoto="s">ลบรูป</button>`:""}',
+             '${ph.s?`<button class="chipbtn" data-savephoto="${esc(ph.s)}" data-pname="อาหาร-${k}-รองท้อง">บันทึกรูป</button>`:""}${assets&&ph.s?`<button class="chipbtn" data-rmphoto="s">ลบรูป</button>`:""}')
+    js = rep(js, '${priceChip(k,"x"+x.id)}',
+             '${priceChip(k,"x"+x.id)}${x.ph?`<button class="chipbtn" data-savephoto="${esc(x.ph)}" data-pname="อาหาร-${k}-${esc(String(x.t||"").replace(":",""))}">บันทึกรูป</button>`:""}')
+    js = rep(js, '  q("[data-price]").forEach(',
+             '  q("[data-savephoto]").forEach(b=>b.onclick=()=>savePhoto(b.dataset.savephoto,b.dataset.pname,b));\n  q("[data-price]").forEach(')
+    return js

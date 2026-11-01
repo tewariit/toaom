@@ -2139,6 +2139,17 @@ let aomT=null;
 if(typeof TL!=="undefined")TL.onAomData=()=>{clearTimeout(aomT);aomT=setTimeout(()=>{
   if(tabNow!=="day"||editing||priceEditing)return;
   try{renderMeals(iso(cur),plan(cur))}catch(e){}},250)};
+
+async function savePhoto(id,name,btn){
+  if(!id)return;const old=btn.textContent;btn.disabled=true;btn.textContent="กำลังเตรียมรูป…";
+  try{
+    const dl=await window.claude?.use?.("downloads");
+    const blob=await (await fetch("/_blob/"+id)).blob();
+    if(!dl)throw {code:"unavailable"};
+    await dl.save({filename:name+".jpg",data:blob});btn.textContent="บันทึกแล้ว ✓";
+  }catch(e){btn.textContent=e&&e.code==="declined"?old:"บันทึกไม่สำเร็จ ลองใหม่"}
+  finally{btn.disabled=false;setTimeout(()=>{btn.textContent=old},2500)}
+}
 function renderMeals(k,p){
   const dd=S.days[k]||{},ph=dd.p||{},a=dd.a||{},c=dd.c||[];
   const cards=p.rows.map((r,i)=>{
@@ -2165,7 +2176,7 @@ function renderMeals(k,p){
           <button class="chipbtn" data-swap="${i}">${r.school?"ไม่ได้กินที่โรงเรียน":"หาไม่ได้ เปลี่ยนเมนู"}</button>
           ${r.swap!=null?`<button class="chipbtn" data-back="${i}">${r.orig===SCHOOL?"กลับไปกินที่โรงเรียน":"กลับเมนูเดิม"}</button>`:""}
           ${editing===k+":m"+i?"":`<button class="chipbtn" data-edit="${k}:m${i}">${act?"แก้ตัวเลข":"ใส่ตัวเลขเอง"}</button>`}
-          ${assets&&ph[i]?`<button class="chipbtn" data-rmphoto="${i}">ลบรูป</button>`:""}
+          ${ph[i]?`<button class="chipbtn" data-savephoto="${esc(ph[i])}" data-pname="อาหาร-${k}-มื้อ${i+1}">บันทึกรูป</button>`:""}${assets&&ph[i]?`<button class="chipbtn" data-rmphoto="${i}">ลบรูป</button>`:""}
         </div></div></div>`;
   });
   const si=snackIdx(p),sEaten=c.includes(si),sTxt=snackOf(k,p.snack),sAct=a.s,se=sAct||est(sTxt),sbz=busy[k+":ms"],sSw=dd.ss!=null,sNm=sAct&&sAct.d;
@@ -2182,7 +2193,7 @@ function renderMeals(k,p){
     <button class="chipbtn" data-sswap="1">หาไม่ได้ เปลี่ยนเมนู</button>
     ${sSw?`<button class="chipbtn" data-sback="1">กลับเมนูเดิม</button>`:""}
     ${editing===k+":ms"?"":`<button class="chipbtn" data-edit="${k}:ms">${sAct?"แก้ตัวเลข":"ใส่ตัวเลขเอง"}</button>`}
-    ${assets&&ph.s?`<button class="chipbtn" data-rmphoto="s">ลบรูป</button>`:""}
+    ${ph.s?`<button class="chipbtn" data-savephoto="${esc(ph.s)}" data-pname="อาหาร-${k}-รองท้อง">บันทึกรูป</button>`:""}${assets&&ph.s?`<button class="chipbtn" data-rmphoto="s">ลบรูป</button>`:""}
     </div></div></div>`);
   $("meals").innerHTML=cards.join("");
   // extras
@@ -2190,7 +2201,7 @@ function renderMeals(k,p){
   $("xlist").innerHTML=xs.length?xs.map(x=>{const bz=busy[k+":x"+x.id],key=k+":x"+x.id;return `<div class="xrow">${x.ph?`<img class="xthumb" src="/_blob/${esc(x.ph)}" alt="">`:`<span class="time off">${esc(x.t)}</span>`}<div class="dt">
     <p>${esc(x.d)}</p>${bz?`<span class="est ai">AI กำลังประเมิน…</span>`:`<span class="est${x.src==="ai"?" ai":""}">≈ ${+x.k||0} kcal · โปรตีน ${+x.p||0} g${x.ph?" · "+esc(x.t):""}${x.src==="ai"?" · AI":""}</span>`}
     ${x.w?`<span class="warnline">⚠ ${esc(x.w)}</span>`:""}${priceEd(k,"x"+x.id,x.d)}
-    ${editing===key?editForm(key,{k:+x.k||0,p:+x.p||0},false):`<div class="acts"><button class="chipbtn" data-edit="${key}">แก้ตัวเลข</button>${priceChip(k,"x"+x.id)}<button class="chipbtn danger" data-xdel="${esc(x.id)}">ลบ</button></div>`}
+    ${editing===key?editForm(key,{k:+x.k||0,p:+x.p||0},false):`<div class="acts"><button class="chipbtn" data-edit="${key}">แก้ตัวเลข</button>${priceChip(k,"x"+x.id)}${x.ph?`<button class="chipbtn" data-savephoto="${esc(x.ph)}" data-pname="อาหาร-${k}-${esc(String(x.t||"").replace(":",""))}">บันทึกรูป</button>`:""}<button class="chipbtn danger" data-xdel="${esc(x.id)}">ลบ</button></div>`}
   </div></div>`}).join(""):`<p class="note">วันนี้ยังไม่มี · กินอะไรนอกแผนบันทึกไว้ ตัวเลขจริงช่วยให้แผนปรับได้ถูก</p>`;
   const xk=xs.reduce((s,x)=>s+(+x.k||0),0);$("xSum").textContent=xs.length?"+"+xk+" kcal":"";
   $("xPhoto").hidden=!canPhoto();
@@ -2236,6 +2247,7 @@ function bindMeals(k,p){
   q("[data-eplan]").forEach(b=>b.onclick=()=>{const key=b.dataset.eplan,dd=day(k),i=key.split(":")[1].slice(1);if(dd.a)delete dd.a[i];editing=null;saveDay(k);render()});
   q("[data-xdel]").forEach(b=>{let armed=false;b.onclick=async()=>{if(!armed){armed=true;b.textContent="กดอีกครั้งเพื่อลบ";setTimeout(()=>{armed=false;b.textContent="ลบ"},3000);return}
     const dd=day(k),x=(dd.x||[]).find(x=>x.id===b.dataset.xdel);dd.x=(dd.x||[]).filter(y=>y!==x);if(x)setPrice(k,"x"+x.id,0);saveDay(k);render();if(x&&x.ph&&assets)try{await assets.delete(x.ph)}catch(e){}}});
+  q("[data-savephoto]").forEach(b=>b.onclick=()=>savePhoto(b.dataset.savephoto,b.dataset.pname,b));
   q("[data-price]").forEach(b=>b.onclick=()=>{priceEditing=k+":"+b.dataset.price;priceErr="";renderMeals(k,p);const f=$("prIn");if(f)f.focus()});
   q("[data-prcancel]").forEach(b=>b.onclick=()=>{priceEditing=null;priceErr="";renderMeals(k,p)});
   q("[data-prsave]").forEach(b=>b.onclick=()=>{
